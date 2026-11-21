@@ -1,6 +1,6 @@
 # Milestone 33: Français
 
-Claude Code session started 2026-11-21. 5 prompts.
+Claude Code session started 2026-11-21. 7 prompts.
 
 Exported with `npm run transcript`. Tool output, hidden reasoning and system prompts are left out; commands are cut short when long. Private details (email, home folder) are removed.
 
@@ -3927,12 +3927,301 @@ Windows AltGr and US-International also need a Windows tester.
 
 Committing M33: first the transcript export, as `CLAUDE.md` asks.
 
-<details><summary>1 tool call</summary>
+<details><summary>3 tool calls</summary>
 
 - **Shell:** Export the session transcript
 
   ```bash
   npm run transcript 2>&1 | tail -5; git status --short docs/transcripts | head
+  ```
+- **Shell:** Scan the transcript for private details
+
+  ```bash
+  F=docs/transcripts/2026-11-21-milestone-33-fran-ais-ae73be3f.md; grep -nEo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}' $F | sort -u | head; grep -nE '/Users/[a-z]+|/private/tmp|Library/Application Support' $F | wc -l; grep -nEi '(api[_-]?key|token|secret|password)[^a-z]{0,3}[:=]' $F | head; grep -nE '(sk|ghp|gho|xox)[-_][A-Za-z0-9]{10,}' $F | head
+  ```
+- **Shell:** Show the local paths found
+
+  ```bash
+  F=docs/transcripts/2026-11-21-milestone-33-fran-ais-ae73be3f.md; grep -nE '/Users/[a-z]+|/private/tmp|Library/Application Support' $F | cut -c1-220
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The transcript is clean: no email addresses or keys, and the exporter already strips usernames from paths. Committing.
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Commit milestone 33
+
+  ```bash
+  git add -A && git commit -q -F - <<'EOF'
+  Français: French menus, words and accent teaching (2.29.0)
+
+  - Menu language (per device) and words language (per player); save v16 adds wordsLanguage, accents {forgiving, seen} and accent-chapter stars
+  - French UI strings (src/i18n/fr.ts, typed), plurals via Intl.PluralRules, translatable shortcut letters and keycaps
+  - Content packs per language (src/content/packs.ts); French words from Lexique 3.83 (CC BY-SA 4.0), French blocklist with accent folding, French December words
+  - src/core/accents.ts: howToType for AZERTY, Spanish ISO and US keyboards (Mac O
+  … (762 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+M33 is committed as `4b972d2` on `feat/m33-francais`. The session transcript is included in the commit. I checked it before committing: no email addresses, keys or tokens, and the exporter had already removed usernames from local paths.
+
+Nothing is merged, tagged or pushed yet. When the French has been reviewed, these are the remaining steps:
+
+1. A native speaker reviews `src/i18n/fr.ts`, `site/fr/`, the French Fair Copy passages and the US-International setup steps.
+2. Fast-forward merge into `main`, then delete the branch with `git branch -d feat/m33-francais`.
+3. Tag the release with `npm run release:tag` on `main`. Pushing the tag waits until you ask.
+
+## 🧑 Prompt
+
+> could you prepare a document for the french speaker that puts the phrases side by side (english vs french) for easier comparison and then a place for them to provide feedback?
+
+### 🤖 Claude
+
+I'll build this as a review page: each English phrase next to its French, with a box per row for the reviewer's feedback, saved so you can read it back. Checking which page type fits first.
+
+<details><summary>1 tool call</summary>
+
+- **Artifact** `{"action":"quickstart","intent":"other","design_systems":false}`
+
+</details>
+
+### 🤖 Claude
+
+A plain page fits. The reviewer's notes need saving so you can read them back, so I'm loading the page-capabilities guidance.
+
+<details><summary>2 tool calls</summary>
+
+- **Skill** `{"skill":"artifact-capabilities"}`
+- **Shell:** Export English and French UI strings as JSON
+
+  ```bash
+  S=<temp file> mkdir -p $S; cat > $S/strings.mjs <<'EOF'
+  import { en } from '../../../../../../../../Users/[removed]/projects/inky-keys/.claude/worktrees/m33-francais-c7e01f/src/i18n/en.ts';
+  import { fr } from '../../../../../../../../Users/[removed]/projects/inky-keys/.claude/worktrees/m33-francais-c7e01f/src/i18n/fr.ts';
+  const out = Object.keys(en).filter((k) => k in fr).map((k) => ({ key: k, en: en[k], fr: fr[k] }));
+  console.log(JSON.stringify(ou
+  … (215 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+752 UI strings. Now the French passages, the web pages (from the built site, block by block) and the December words.
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Extract passages, site page blocks and holiday words
+
+  ```bash
+  S=<temp file> npm run build >/dev/null 2>&1; python3 - "$S" <<'EOF'
+  import re, json, subprocess, sys, html
+  from html.parser import HTMLParser
+  from difflib import SequenceMatcher
+  S=sys.argv[1]
+  root='/Users/[removed]/projects/inky-keys/.claude/worktrees/m33-francais-c7e01f'
+  # passages
+  src=open(root+'/src/core/fairCopy.ts').read()
+  objs=re.findall(r"  \{\n    id: '[^']+',\n    lang: 'fr',.*?\n  \},", src, re.S)
+  js='['+''.join(o[2:-1]+',' for o in objs)+'
+  … (2579 more characters)
+  ```
+- **Shell:** Spot-check page alignment
+
+  ```bash
+  S=<temp file> python3 -c "
+  import json;d=json.load(open('$S/extra.json'))
+  for r in d['pages'][0]['rows'][:14]: print(r['tag'],'|',r['en'][:60],'|',r['fr'][:60])
+  print()
+  for r in d['pages'][3]['rows'][:6]: print(r['tag'],'|',r['fr'][:90])
+  "
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The alignment slipped where the French page has an extra section. I'll switch to a smarter alignment that also compares numbers, `<kbd>` keys and lengths.
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Re-align page blocks by content similarity
+
+  ```bash
+  S=<temp file> python3 - "$S" <<'EOF'
+  import json, re, sys
+  S=sys.argv[1]
+  d=json.load(open(S+'/extra.json'))
+  def sim(a,b):
+      if a['tag']!=b['tag']: return -9
+      ta,tb=a['text'],b['text']
+      na,nb=re.findall(r'\d+',ta),re.findall(r'\d+',tb)
+      ka,kb=ta.count('<kbd>'),tb.count('<kbd>')
+      ba,bb=ta.count('<b>'),tb.count('<b>')
+      la,lb=len(ta),len(tb)
+      s=2+ (1.5 if na==nb else -1) + (1 if ka==kb else -1) + (1 if ba==bb else -0.5)
+      r=min(la,lb)/
+  … (1332 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The French parents page is missing the "Moving devices" bullet, and the English one lacks "Two languages". Adding both so the pages match, then re-extracting.
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Even up the parents pages and rebuild
+
+  ```bash
+  python3 - <<'EOF'
+  def edit(p,a,b):
+      s=open(p).read(); assert a in s,(p,a); open(p,'w').write(s.replace(a,b,1))
+  edit('site/fr/parents-and-teachers.html',"""menus utilisables au clavier seul.</li>""","""menus utilisables au clavier seul.</li>
+    <li><strong>Changer d’appareil.</strong> Un lien de transfert emporte la progression d’un joueur vers un autre ordinateur, sans rien envoyer à aucun serveur.</li>""")
+  edit('site/en/parents-and-teachers.html',"""  <li><strong>The Daily Page</strong> is the same short notebook""","""  <li><strong>Two separate languages.</strong> The menu language is set 
+  … (177 more characters)
+  ```
+- **Shell:** Re-extract and align all review content
+
+  ```bash
+  S=<temp file> cat > $S/extract.py <<'EOF'
+  import re, json, subprocess, sys, html
+  from html.parser import HTMLParser
+  S=sys.argv[1]
+  root='/Users/[removed]/projects/inky-keys/.claude/worktrees/m33-francais-c7e01f'
+  src=open(root+'/src/core/fairCopy.ts').read()
+  objs=re.findall(r"  \{\n    id: '[^']+',\n    lang: 'fr',.*?\n  \},", src, re.S)
+  js='['+''.join(o[2:-1]+',' for o in objs)+']'
+  passages=json.loads(subprocess.check_output(['node','-e',f'console.log
+  … (3026 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Pages line up now; the only unpaired rows are the French-only accents section. Building the review data with sections and my questions for the reviewer.
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Build the review data file
+
+  ```bash
+  S=<temp file> python3 - "$S" <<'EOF'
+  import json, sys, re
+  S=sys.argv[1]
+  strings=json.load(open(S+'/strings.json')); extra=json.load(open(S+'/extra.json'))
+  SECTIONS=[
+   ('menus','Menus and players',['menu.','newNotebook.','contents.','pause.','players.','badge.','about.','whatsNew.','keyboardNotice.','nudge.','unlock.']),
+   ('settings','Settings',['settings.','layout.','a11y.']),
+   ('play','Playing a page',['hud.','manuscript.','ability.','banner.','popup.
+  … (4878 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The data has 898 items (196 KB), so it goes beside the page as `data.json`. Reading the `db` type definitions before writing the page.
+
+<details><summary>4 tool calls</summary>
+
+- **Read** `<temp file>`
+- **Read** `<temp file>`
+- **Wrote** `<temp file>`
+- **Shell:** Fix note focus and syntax-check the page script
+
+  ```bash
+  S=<temp file> python3 - "$S" <<'EOF'
+  import sys,re
+  S=sys.argv[1]; p=S+'/inky-keys-french-review.html'; s=open(p).read()
+  a="""$(`[data-id="${CSS.escape(item.id)}"] textarea:last-of-type`)?.focus();"""
+  assert a in s
+  s=s.replace(a,"""$(`[data-id="${CSS.escape(item.id)}"] [id^="note-"]`)?.focus();""")
+  open(p,'w').write(s)
+  js=re.search(r'<script>(.*)</script>',s,re.S).group(1)
+  open(S+'/check.js','w').write(js)
+  EOF
+  node --check $S/check.js && echo syntax-ok
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The script parses. Publishing the page with `data.json` beside it and shared storage switched on.
+
+<details><summary>1 tool call</summary>
+
+- **Artifact** `{"file_path":"<temp file>","files":{"data.json":"<temp file>
+… (306 more characters)`
+
+</details>
+
+### 🤖 Claude
+
+Published. One check that the shared feedback store answers (it should be empty).
+
+<details><summary>1 tool call</summary>
+
+- **ArtifactData** `{"action":"list","url":"https://claude.ai/artifact/4qnmn9YKBkikSbFFGNJA5M","collection":"feedback"}`
+
+</details>
+
+### 🤖 Claude
+
+I've built the review document as a page: https://claude.ai/artifact/4qnmn9YKBkikSbFFGNJA5M
+
+**It's private for now.** Your French speaker can't open it until you share it with them from the page's Share menu. Give them **Contributor** access, so their notes save to the page, where you and I can both read them.
+
+**What's in it (898 rows):**
+- **Game text:** every message in the game, English on the left and French on the right, grouped by screen (menus, settings, tips, Type Case, accents, Daily Page, Fair Copy, stickers, saves, word lists). It includes the menu shortcut letters and the 2.29.0 release notes.
+- **Web pages:** How to play, For parents and teachers and Privacy, lined up paragraph by paragraph, plus the French-only accents page. While lining them up I found the French parents page was missing the "moving to another device" point, and the English one lacked the "two languages" point. I've added both to the site files; that change isn't committed yet.
+- **The ten French Fair Copy passages,** with a request to check them against the published editions.
+- **The December word list.**
+- **Questions for the reviewer** are highlighted on about 70 rows where I was unsure, such as the rank names, boss and creature names, the "Accents indulgents" name, keycap names, and the Windows and Chromebook menu paths for US-International.
+
+**How the reviewer uses it:**
+- They mark each row **OK** or **Suggest a change**; a change opens a box to type better French, and they can add a note to any row.
+- Parts of the game text that the game fills in, like `{name}`, are highlighted so they keep them unchanged.
+- There are filters (Not reviewed, Needs a change, Has a question), a search box, a progress bar, and a general comments box at the end.
+- If they can't sign in to claude.ai, their notes are kept in their own browser. **Copy all feedback** then turns them into plain text they can email you.
+
+I checked that the page's script parses and that the shared feedback store answers (it's empty so far). I haven't clicked through the page in a browser myself. When they're done, ask me and I'll read their feedback and apply the changes.
+
+## 🧑 Prompt
+
+> commit the site page fixes
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** See uncommitted changes
+
+  ```bash
+  git status --short; git diff --stat
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Only the two parents pages changed. Running the site tests and the transcript export, as `CLAUDE.md` asks, then committing.
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Test site pages and export transcript
+
+  ```bash
+  npx vitest run src/site 2>&1 | grep -E "Tests |×"; npm run transcript 2>&1 | tail -1; git status --short
   ```
 
 </details>
