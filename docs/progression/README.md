@@ -437,15 +437,38 @@ Stickers arrive the moment they're earned, with a toast in the corner that doesn
 - The 1, 2 and 3 power keys and the 1–4 difficulty keys go by the physical key, so they work without Shift on AZERTY. A number key that types one of the keys in play (like é on AZERTY's 2, if selected) types it instead.
 - Key groups are built from the layout, and every key is in exactly one: Capitals only takes real letter keys (not AZERTY's digits), Digits finds digits on Shift, a new **Accents** group (on layouts that have them) holds AZERTY's é è ç à ù and the dead accent keys (^ ¨, and Spanish ´ ¨ ` ^), and Symbols takes the rest (µ, º, ª, ²). Everything selects every key; Number-row symbols follow the layout.
 
+### M33: Français (2.29.0)
+
+| Accents in the Contents | An accent chapter's card |
+|---|---|
+| <img src="m33/contents-accents.png" width="420" alt="The Apprentice Contents page in French: below the 27 chapters, a dashed line and an Accents part with five chapters, é, è à ù, ç, â ê î ô û (open, no stars yet) and ë ï ü (locked), and a How to type accents link"> | <img src="m33/accent-intro.png" width="420" alt="The card opening Accents 4 in French: â equals step 1, the ^ key (it waits for the letter), then step 2, the A key, and below, ê î ô û each shown as ^ then the letter, with a Start button"> |
+| A second part of the Contents page: five accent chapters, each opened by the one before. | Numbered keycaps that press themselves in turn (still with reduced motion). |
+
+| The accent help card | The Type Case's Accents strip |
+|---|---|
+| <img src="m33/accent-help.png" width="420" alt="The accent help card in French on AZERTY: every French accented letter with its keys, é è ç à ù on their own keys, the circumflex letters as ^ then the letter, ë ï ü as Shift plus ^ then the letter"> | <img src="m33/type-case-accents.png" width="420" alt="The Type Case in French on AZERTY, with a Letters + accents preset, and under the keyboard a strip of the accented letters typed with two keys: â ê î ô û ë ï ü, and a How to type accents link"> |
+| Every accent, with the keys for the player's keyboard and computer. | Accents with no key of their own can be picked too. |
+
+**New:**
+- **Two languages:** a **Menu language** for the device (from the browser the first time) and a **Words language** for each player (save version 16). French menus (`src/i18n/fr.ts`, drafted for a native speaker to review), plurals through `Intl.PluralRules`, and translated shortcut letters and keycap names.
+- **French words:** 56,651 words from Lexique 3.83 (CC BY-SA 4.0), with LDNOOBW's French list and a family-friendly French filter; the blocklist now folds accents. Words with œ, æ or ÿ are left out. French December words.
+- **Accent teaching:** five accent chapters (é · è à ù · ç · â ê î ô û · ë ï ü), each a three-page notebook with its letters weighted up and accented words leaning in; a just-in-time card the first time untaught accents come up in Free Write, the Daily Page or Fair Copy; after a miss on an accented letter, that creature shows its keys in red pen; the accent help card and the `/fr/accents/` page; a **Letters + accents** preset; and **Forgiving accents** (off by default), which lets e count for é.
+- **Key presses count:** word difficulty and creature pacing add the extra presses an accent takes on the player's keyboard (`howToType`, for AZERTY, Spanish ISO, and US keyboards on a Mac or with US-International).
+- **Modes follow the words language:** the Daily Page (its own seed for French, with the common accents; English seeds unchanged), challenge links (an optional `w`), Fair Copy (ten French public-domain passages; bests per language; Bookworm for every passage in any one language) and word lists (from `fr.wikipedia.org`).
+- **French web pages** under `/fr/` (How to play, For parents and teachers, Privacy, Accents), linked with `hreflang` and listed in the sitemap.
+- The snapshot tour has `menu-fr`, `contents-accents`, `accent-intro`, `accent-help`, `type-case-accents` and `site-fr-accents` shots.
+
+**Before release:** a native speaker reviews `fr.ts`, the French pages and the passages; Windows AltGr and US-International need a Windows tester.
+
 ## Keeping this up to date
 
 At the end of each milestone, run:
 
 ```bash
-npm run snapshots -- m32
+npm run snapshots -- m33
 ```
 
-That writes a standard set of shots to `docs/progression/m32/` (keyboard-notice, splash, menu, about, desk, players, settings, settings-layout, type-case-dvorak, chapter-intro-dvorak, type-case-azerty, type-case-spanish, how-to-play, how-to-play-bosses, daily, stickers, challenge, practice, type-case, briefing, lineup, capitals, pause, contents, chapter-intro, play, page-done, and the holiday shots menu-thanksgiving, lineup-thanksgiving, menu-christmas, lineup-christmas, desk-holidays and stickers-holidays, then the web pages site-parents and site-how-to-play). `npm run snapshots -- m32 holidays` takes only the holiday shots. Then:
+That writes a standard set of shots to `docs/progression/m33/` (keyboard-notice, splash, menu, about, desk, players, settings, settings-layout, type-case-dvorak, chapter-intro-dvorak, type-case-azerty, type-case-spanish, menu-fr, contents-accents, accent-intro, accent-help, type-case-accents, how-to-play, how-to-play-bosses, daily, stickers, challenge, practice, type-case, briefing, lineup, capitals, pause, contents, chapter-intro, play, page-done, and the holiday shots menu-thanksgiving, lineup-thanksgiving, menu-christmas, lineup-christmas, desk-holidays and stickers-holidays, then the web pages site-parents, site-how-to-play and site-fr-accents). `npm run snapshots -- m33 holidays` takes only the holiday shots. Then:
 
 1. Run `npm run snapshots -- latest` too, so the "Latest" column matches.
 2. Add a section under **Milestone by milestone** with one or two shots and what's **New** or **Changed**.

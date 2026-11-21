@@ -15,8 +15,9 @@ import { DEFAULT_NUDGES, type NudgeState } from '../core/nudges';
 import { DEFAULT_COSMETICS, UNLOCKS, type Cosmetics } from '../core/rewards';
 import { DEFAULT_LAYOUT_ID, isLayoutId } from '../content/layouts';
 import type { LayoutId } from '../content/layouts/types';
+import { DEFAULT_LANGUAGE, LANGUAGES, isLanguage, type Language } from '../core/languages';
 
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 export interface KeyStat {
   /** Times typed correctly. */
@@ -57,6 +58,8 @@ export interface SavedNotebook {
 /** A downloaded topic word list (REQUIREMENTS §6, optional vocabulary fetch). */
 export interface VocabList {
   id: string;
+  /** The words language it was downloaded for (added in version 16; older lists are English). */
+  lang: Language;
   topic: string;
   words: string[];
   /** Whether its words are used in the game. */
@@ -73,6 +76,16 @@ export interface ApprenticeProgress {
   stars: Record<string, number>;
   /** The last chapter has been finished at least once. */
   completed: boolean;
+  /** Best stars per accent chapter (up to 3 a page), by words language (added in version 16). Index = chapter (0-based); 0 = not yet played. */
+  accentStars: Partial<Record<Language, number[]>>;
+}
+
+/** Accent options and what's been taught (added in version 16). */
+export interface AccentProgress {
+  /** Let a plain letter count for its accented one (e for é). Off by default. */
+  forgiving: boolean;
+  /** Accented letters this player has been shown how to type. */
+  seen: string[];
 }
 
 /** Ink earned (XP) and equipped cosmetics (added in version 4). */
@@ -100,6 +113,8 @@ export interface DailyResult {
   accuracy: number;
   /** Every page was cleared (not out of ink or left early). */
   finished: boolean;
+  /** Forgiving accents was on (added in version 16; absent means off). */
+  forgiving?: true;
 }
 
 /** The sticker book (core/stickers.ts; added in version 10). */
@@ -132,12 +147,20 @@ export interface FairCopyProgress {
   copied: string[];
 }
 
-/** Which kinds of Fair Copy test have a best: a whole passage, or a timed length. */
-export function fairCopyKey(seconds: number | null): string {
-  return seconds === null ? 'passage' : String(seconds);
+/**
+ * Which kinds of Fair Copy test have a best: a whole passage, or a timed
+ * length, kept per words language. English keys are as they always were
+ * ("passage", "60"); others are prefixed ("fr:passage").
+ */
+export function fairCopyKey(seconds: number | null, lang: Language = DEFAULT_LANGUAGE): string {
+  const kind = seconds === null ? 'passage' : String(seconds);
+  return lang === DEFAULT_LANGUAGE ? kind : `${lang}:${kind}`;
 }
 
-const FAIR_COPY_KEYS: readonly string[] = [fairCopyKey(null), ...GAME_CONFIG.fairCopy.timedSeconds.map(fairCopyKey)];
+const FAIR_COPY_KEYS: readonly string[] = LANGUAGES.flatMap((lang) => [
+  fairCopyKey(null, lang),
+  ...GAME_CONFIG.fairCopy.timedSeconds.map((s) => fairCopyKey(s, lang)),
+]);
 
 /** Daily Page history (added in version 9). */
 export interface DailyProgress {
@@ -177,6 +200,10 @@ export interface SaveData {
   nudges: NudgeState;
   /** Added in version 14. */
   fairCopy: FairCopyProgress;
+  /** The language words come in for this player (added in version 16). */
+  wordsLanguage: Language;
+  /** Added in version 16. */
+  accents: AccentProgress;
 }
 
 export interface Tutorials {
@@ -215,7 +242,7 @@ export function defaultSave(): SaveData {
     records: { bestScore: {}, furthestChapter: {}, pageBest: {} },
     notebook: null,
     vocab: [],
-    apprentice: { unlocked: 1, stars: {}, completed: false },
+    apprentice: { unlocked: 1, stars: {}, completed: false, accentStars: {} },
     profile: { ink: 0, cosmetics: { ...DEFAULT_COSMETICS } },
     tutorials: { enabled: true, seen: [] },
     layout: DEFAULT_LAYOUT_ID,
@@ -223,6 +250,8 @@ export function defaultSave(): SaveData {
     stickers: { earned: {}, unseen: [], bossesBeaten: [] },
     nudges: { ...DEFAULT_NUDGES },
     fairCopy: { tests: 0, best: {}, copied: [] },
+    wordsLanguage: DEFAULT_LANGUAGE,
+    accents: { forgiving: false, seen: [] },
   };
 }
 
@@ -278,12 +307,13 @@ function sanitizeVocab(v: unknown): VocabList[] {
   return v.flatMap((list): VocabList[] => {
     if (!isObject(list) || typeof list.id !== 'string' || typeof list.topic !== 'string') return [];
     const words = Array.isArray(list.words)
-      ? [...new Set(list.words.filter((w): w is string => typeof w === 'string' && /^[a-z]{2,14}$/.test(w)))]
+      ? [...new Set(list.words.filter((w): w is string => typeof w === 'string' && /^\p{Ll}{2,14}$/u.test(w.normalize('NFC'))))]
       : [];
     if (words.length === 0) return [];
     return [
       {
         id: list.id,
+        lang: isLanguage(list.lang) ? list.lang : DEFAULT_LANGUAGE,
         topic: list.topic.slice(0, 40),
         words,
         enabled: list.enabled !== false,
@@ -301,10 +331,19 @@ function sanitizeApprentice(v: unknown): ApprenticeProgress {
       if (/^\d+-\d+$/.test(key) && typeof value === 'number' && value >= 1 && value <= 3) stars[key] = Math.floor(value);
     }
   }
+  const accentStars: Partial<Record<Language, number[]>> = {};
+  if (isObject(a.accentStars)) {
+    for (const lang of LANGUAGES) {
+      const list = a.accentStars[lang];
+      // A chapter's best stars: up to 3 a page.
+      if (Array.isArray(list)) accentStars[lang] = list.slice(0, 20).map((n) => Math.min(3 * GAME_CONFIG.accents.plan.length, count(n)));
+    }
+  }
   return {
     unlocked: Math.min(APPRENTICE_CHAPTERS, Math.max(1, count(a.unlocked) || 1)),
     stars,
     completed: a.completed === true,
+    accentStars,
   };
 }
 
@@ -359,7 +398,14 @@ function sanitize(v: Json): SaveData {
     stickers: sanitizeStickers(v.stickers),
     nudges: sanitizeNudges(v.nudges),
     fairCopy: sanitizeFairCopy(v.fairCopy),
+    wordsLanguage: isLanguage(v.wordsLanguage) ? v.wordsLanguage : DEFAULT_LANGUAGE,
+    accents: sanitizeAccents(v.accents),
   };
+}
+
+function sanitizeAccents(v: unknown): AccentProgress {
+  if (!isObject(v)) return { forgiving: false, seen: [] };
+  return { forgiving: v.forgiving === true, seen: chars(v.seen) };
 }
 
 function sanitizeFairCopy(v: unknown): FairCopyProgress {
@@ -420,6 +466,7 @@ function sanitizeDaily(v: unknown): DailyProgress {
         wpm: count(r.wpm),
         accuracy: Math.min(100, count(r.accuracy)),
         finished: r.finished === true,
+        ...(r.forgiving === true ? { forgiving: true as const } : {}),
       };
     }
   }
@@ -522,6 +569,14 @@ const MIGRATIONS: Record<number, (save: Json) => Json> = {
   13: (save) => ({ ...save, version: 14, fairCopy: { tests: 0, best: {} } }),
   // v15 remembers which Fair Copy passages were copied out; none so far, as nothing kept track before.
   14: (save) => ({ ...save, version: 15, fairCopy: { ...(isObject(save.fairCopy) ? save.fairCopy : {}), copied: [] } }),
+  // v16 added a words language (everyone so far typed English), accent options and accent-chapter stars.
+  15: (save) => ({
+    ...save,
+    version: 16,
+    wordsLanguage: DEFAULT_LANGUAGE,
+    accents: { forgiving: false, seen: [] },
+    apprentice: { ...(isObject(save.apprentice) ? save.apprentice : {}), accentStars: {} },
+  }),
 };
 
 /** Load any supported save shape as the current version, or throw SaveFormatError. */

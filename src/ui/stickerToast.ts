@@ -4,7 +4,7 @@
  */
 import './dialog.css';
 import './stickers.css';
-import { t } from '../i18n';
+import { formatNumber, tCount } from '../i18n';
 import { h } from './dom';
 
 export interface ToastSticker {
@@ -25,7 +25,7 @@ export function showStickerToast(host: HTMLElement, stickers: readonly ToastStic
   current?.remove();
   const toast = h('div', { className: 'sticker-toast', role: 'status', 'aria-live': 'polite' }, [
     h('span', { className: 'sticker-toast-title' }, [
-      stickers.length === 1 ? t('stickers.toast') : t('stickers.toastMany', { count: stickers.length }),
+      tCount('stickers.toast', stickers.length, { count: formatNumber(stickers.length) }),
     ]),
     ...stickers.map((s) => h('span', { className: 'sticker-toast-row' }, [stickerArt(s.emoji, s.group), s.name])),
   ]);

@@ -5,7 +5,8 @@
 import { Blocklist } from './blocklist';
 import { generateString } from './generator';
 import { GAME_CONFIG, type TargetKind } from '../core/config';
-import { buildWordPool, pickWord, type RankedWord, type WordEntry } from './wordPool';
+import { buildWordPool, pickWord, type PressCost, type RankedWord, type WordEntry } from './wordPool';
+import { isAccented, plainLetter } from '../core/accents';
 
 /**
  * Below this many typeable words, real words get repetitive, so generated
@@ -47,6 +48,8 @@ export interface ContentSource {
   nextPhrase(difficulty: number, random: () => number): string;
   /** Whether these keys can make a target type (Run-ons need the space key). */
   supports(kind: TargetKind): boolean;
+  /** Key presses `text` takes beyond one per character (accents: ^ then e). */
+  extraPresses(text: string): number;
 }
 
 export interface ContentOptions {
@@ -75,6 +78,15 @@ export interface ContentOptions {
    */
   seasonWords?: readonly string[];
   seasonShare?: number;
+  /** Extra key presses each character takes on the player's keyboard (core/accents.ts), for word difficulty and pacing. */
+  pressCost?: PressCost;
+  /**
+   * Forgiving accents: a word may use an accented letter when its plain
+   * letter is selected (e for é), since e will count for é.
+   */
+  forgiving?: boolean;
+  /** Above 1, words with an accent are picked more often (the "Letters + accents" preset). */
+  accentBias?: number;
 }
 
 /** Share of words drawn from topic lists, when enough topic words fit the keys. */
@@ -111,12 +123,21 @@ export function countTypeableWords(words: readonly WordEntry[], keys: Iterable<s
  */
 export function styleWord(word: string, keys: ReadonlySet<string>, random: () => number): string {
   let out = '';
-  for (const ch of word) out += keys.has(ch) ? ch : ch.toUpperCase();
+  // A letter only selected as a capital becomes one. An accented capital that
+  // isn't a key (É on Windows AZERTY) never appears: the word keeps its é.
+  for (const ch of word) out += keys.has(ch) || !keys.has(ch.toUpperCase()) ? ch : ch.toUpperCase();
 
-  const first = out[0];
+  const first = [...out][0];
   if (first && keys.has(first.toLowerCase()) && keys.has(first.toUpperCase()) && random() < CAPITALIZE_CHANCE) {
-    out = first.toUpperCase() + out.slice(1);
+    out = first.toUpperCase() + out.slice(first.length);
   }
+  return out;
+}
+
+/** Letters a word may use with Forgiving accents: each selected letter also stands for its accented forms. */
+function forgivingLetters(letters: Set<string>, words: readonly WordEntry[]): Set<string> {
+  const out = new Set(letters);
+  for (const { word } of words) for (const ch of word) if (!out.has(ch) && isAccented(ch) && letters.has(plainLetter(ch))) out.add(ch);
   return out;
 }
 
@@ -129,6 +150,9 @@ export function createContentSource({
   topicWords = [],
   seasonWords = [],
   seasonShare = 0,
+  pressCost,
+  forgiving = false,
+  accentBias = 1,
 }: ContentOptions): ContentSource {
   if (keys.length === 0) throw new Error('A content source needs at least one key');
   const unique = [...new Set(keys)];
@@ -136,17 +160,19 @@ export function createContentSource({
   const punctuation = TRAILING_PUNCTUATION.filter((p) => keySet.has(p));
   const weights = unique.map((k) => Math.max(0, keyWeights[k] ?? 1));
 
-  let pool: RankedWord[] = buildWordPool(words, wordLetters(unique));
-  if (!trustedWords) pool = pool.filter((w) => !blocklist.blocksWord(w.word));
+  const topicEntries = [...new Set(topicWords)].map((word) => ({ word, tier: 0 }));
+  const seasonEntries = [...new Set(seasonWords)].map((word) => ({ word, tier: 0 }));
+  const plainLetters = wordLetters(unique);
+  const letters = forgiving ? forgivingLetters(plainLetters, [...words, ...topicEntries, ...seasonEntries]) : plainLetters;
 
-  const topicPool = buildWordPool(
-    [...new Set(topicWords)].map((word) => ({ word, tier: 0 })),
-    wordLetters(unique),
-  ).filter((w) => !blocklist.blocksWord(w.word));
-  const seasonPool = buildWordPool(
-    [...new Set(seasonWords)].map((word) => ({ word, tier: 0 })),
-    wordLetters(unique),
-  ).filter((w) => !blocklist.blocksWord(w.word));
+  let pool: RankedWord[] = buildWordPool(words, letters, pressCost);
+  if (!trustedWords) pool = pool.filter((w) => !blocklist.blocksWord(w.word));
+  // Words with an accent, for the "Letters + accents" preset.
+  const accentPool = accentBias > 1 ? pool.filter((w) => [...w.word].some(isAccented)) : [];
+  const accentShare = pool.length > 0 ? Math.min(0.6, (accentBias * accentPool.length) / pool.length) : 0;
+
+  const topicPool = buildWordPool(topicEntries, letters, pressCost).filter((w) => !blocklist.blocksWord(w.word));
+  const seasonPool = buildWordPool(seasonEntries, letters, pressCost).filter((w) => !blocklist.blocksWord(w.word));
   // Without enough season words, no random draw is spent on them, so seeded content stays the same.
   const useSeasonPool = seasonShare > 0 && seasonPool.length >= MIN_TOPIC_POOL;
 
@@ -161,7 +187,15 @@ export function createContentSource({
     }
     const useTopic = topicPool.length >= MIN_TOPIC_POOL && random() < TOPIC_SHARE;
     const useWords = pool.length >= MIN_WORD_POOL || (pool.length > 0 && random() < 0.5);
-    const word = useTopic ? pickWord(topicPool, difficulty, random) : useWords ? pickWord(pool, difficulty, random) : null;
+    // Without an accent bias no random draw is spent here, so seeded content stays the same.
+    const useAccent = !useTopic && useWords && accentPool.length >= MIN_TOPIC_POOL && random() < accentShare;
+    const word = useTopic
+      ? pickWord(topicPool, difficulty, random)
+      : useAccent
+        ? pickWord(accentPool, difficulty, random)
+        : useWords
+          ? pickWord(pool, difficulty, random)
+          : null;
     if (!word) return generateString(unique, difficulty, random, blocklist);
     return styleWord(word, keySet, capitalize ? random : () => 1);
   };
@@ -175,6 +209,12 @@ export function createContentSource({
     topicWordCount: topicPool.length,
     supports(kind) {
       return kind !== 'runon' || keySet.has(' ');
+    },
+    extraPresses(text) {
+      if (!pressCost) return 0;
+      let n = 0;
+      for (const ch of text) n += pressCost(ch);
+      return n;
     },
     nextPhrase(difficulty, random) {
       const { min, max, longAt, maxWordLength } = GAME_CONFIG.phraseWords;

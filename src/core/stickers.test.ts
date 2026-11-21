@@ -120,10 +120,11 @@ describe('stickers', () => {
     expect(earned(facts({ fairCopy: copy({ seconds: 30, mistakesLeft: 0 }) }))).not.toContain('beatTheBell');
   });
 
-  it('gives Bookworm once every Fair Copy passage is copied out', () => {
-    const ids = PASSAGES.map((p) => p.id);
-    expect(earned(facts({ passagesCopied: ids.slice(1) }))).not.toContain('bookworm');
-    expect(earned(facts({ passagesCopied: ids }))).toContain('bookworm');
+  it('gives Bookworm once every Fair Copy passage in any one language is copied out', () => {
+    const ids = (lang: string) => PASSAGES.filter((p) => p.lang === lang).map((p) => p.id);
+    expect(earned(facts({ passagesCopied: [...ids('en').slice(1), ...ids('fr').slice(1)] }))).not.toContain('bookworm');
+    expect(earned(facts({ passagesCopied: ids('en') }))).toContain('bookworm');
+    expect(earned(facts({ passagesCopied: ids('fr') }))).toContain('bookworm');
   });
 
   it('never gives a sticker twice', () => {

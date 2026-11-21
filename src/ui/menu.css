@@ -1067,3 +1067,24 @@
 :root[data-motion='reduced'] .words-note-drop {
   animation: none;
 }
+
+/* The Contents page's "Accents" part (milestone 33). */
+.menu-accents {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 2px dashed var(--tc-ink-light);
+}
+
+.menu-part-title {
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.menu-accent-chapters {
+  max-height: none;
+}
+
+.menu-accent-letters {
+  font-size: 1.25em;
+  letter-spacing: 0.08em;
+}

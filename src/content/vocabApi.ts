@@ -6,8 +6,19 @@
  */
 import { GAME_CONFIG } from '../core/config';
 import type { Blocklist } from './blocklist';
+import type { Language } from '../core/languages';
 
-export const VOCAB_API_ORIGIN = 'https://en.wikipedia.org';
+/**
+ * The Wikipedia for each words language: the only origins the game ever
+ * contacts, and only when the player asks (CSP connect-src, PRIVACY.md).
+ */
+export const VOCAB_API_ORIGINS: Readonly<Record<Language, string>> = {
+  en: 'https://en.wikipedia.org',
+  fr: 'https://fr.wikipedia.org',
+};
+
+/** English Wikipedia, as before. */
+export const VOCAB_API_ORIGIN = VOCAB_API_ORIGINS.en;
 
 /** Wikimedia asks browser clients to name themselves with this header (no personal details). */
 const API_USER_AGENT = 'InkyKeys/2 (https://github.com/pwbrown/inky-keys)';
@@ -35,8 +46,8 @@ export function cleanTopic(topic: string): string | null {
 }
 
 /** Search for the topic and return the best article's plain text in one request. */
-export function topicUrl(topic: string): string {
-  const url = new URL('/w/api.php', VOCAB_API_ORIGIN);
+export function topicUrl(topic: string, lang: Language = 'en'): string {
+  const url = new URL('/w/api.php', VOCAB_API_ORIGINS[lang]);
   const params: Record<string, string> = {
     action: 'query',
     format: 'json',
@@ -73,10 +84,12 @@ export function wordsFromArticle(text: string, topic: string, dictionary: Dictio
   const { maxWords, tierWeights, minCount, rareTier } = GAME_CONFIG.vocab;
   const counts = new Map<string, number>();
   const capitalised = new Map<string, number>();
-  // Letters only; a word followed by a hyphen is a prefix ("non-", "mid-") and skipped.
-  for (const match of text.matchAll(/[A-Za-z]+(?!-)\b/g)) {
+  // Letters only (accented ones too); a word followed by a hyphen is a prefix ("non-", "mid-") and skipped.
+  text = text.normalize('NFC');
+  for (const match of text.matchAll(/\p{L}+(?![\p{L}-])/gu)) {
     const word = match[0].toLowerCase();
-    if (word.length < 3 || word.length > 14 || !dictionary.has(word)) continue;
+    const length = [...word].length;
+    if (length < 3 || length > 14 || !dictionary.has(word)) continue;
     counts.set(word, (counts.get(word) ?? 0) + 1);
     // Capitals that start a sentence or a line say nothing about names.
     const before = text.slice(0, match.index).trimEnd().at(-1);
@@ -118,6 +131,8 @@ export async function fetchTopicWords(
   dictionary: Dictionary,
   blocklist: Blocklist,
   fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
+  /** The words language: which Wikipedia to ask. */
+  lang: Language = 'en',
 ): Promise<{ topic: string; words: string[] }> {
   const clean = cleanTopic(topic);
   if (!clean) throw new VocabError('Invalid topic', 'invalid-topic');
@@ -125,7 +140,7 @@ export async function fetchTopicWords(
 
   let response: Response;
   try {
-    response = await fetchImpl(topicUrl(clean), {
+    response = await fetchImpl(topicUrl(clean, lang), {
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
       cache: 'no-store',

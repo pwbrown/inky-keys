@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cleanChallengeName, decodeChallenge, encodeChallenge, type Challenge } from './challenge';
 
 const isLayout = (id: string) => ['us-qwerty', 'dvorak', 'colemak'].includes(id);
-const sample: Challenge = { daily: 12, layout: 'us-qwerty', score: 4820, grades: ['A+', 'B', 'C'], name: 'Pip' };
+const sample: Challenge = { daily: 12, layout: 'us-qwerty', score: 4820, grades: ['A+', 'B', 'C'], name: 'Pip', words: 'en' };
 
 /** Base64url of some JSON, as a link would carry it. */
 const raw = (json: unknown) =>
@@ -48,5 +48,14 @@ describe('challenge links', () => {
     expect(cleanChallengeName('!!!')).toBeNull();
     expect(cleanChallengeName(42)).toBeNull();
     expect([...cleanChallengeName('x'.repeat(50))!].length).toBe(20);
+  });
+
+  it('carries a words language other than English, and older links mean English', () => {
+    const fr: Challenge = { ...sample, words: 'fr' };
+    expect(decodeChallenge(encodeChallenge(fr), isLayout)).toEqual(fr);
+    // English links are exactly as before: no `w`.
+    expect(JSON.parse(atob(encodeChallenge(sample).slice(2).replace(/-/g, '+').replace(/_/g, '/')))).not.toHaveProperty('w');
+    expect(decodeChallenge(raw({ v: 1, d: 12, l: 'us-qwerty', s: 10, g: '' }), isLayout)?.words).toBe('en');
+    expect(decodeChallenge(raw({ v: 1, d: 12, l: 'us-qwerty', s: 10, g: '', w: 'xx' }), isLayout)).toBeNull();
   });
 });

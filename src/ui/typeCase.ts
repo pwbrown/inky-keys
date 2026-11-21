@@ -13,6 +13,7 @@ import {
   orderedSelection,
   regionChars,
   regionState,
+  strippedAccents,
   toggleRegion,
   type Preset,
 } from '../core/keySelection';
@@ -39,6 +40,10 @@ export interface TypeCaseOptions {
   /** Save the current selection as a named preset. Returns the new preset. */
   onSavePreset(name: string, keys: string[]): Preset;
   onDeletePreset(id: string): void;
+  /** The words language's accented letters this player can type (core/accents.ts), for the Accents group and strip. */
+  accents?: readonly string[];
+  /** Open the accent help card. */
+  onAccentHelp?(): void;
 }
 
 export interface TypeCaseHandle {
@@ -56,6 +61,7 @@ export function presetName(preset: Preset): string {
 
 export function openTypeCase(host: HTMLElement, options: TypeCaseOptions): TypeCaseHandle {
   const { layout } = options;
+  const accents = options.accents ?? [];
   let selection = new Set(options.initial);
   let custom = [...options.customPresets];
   const previousFocus = document.activeElement as HTMLElement | null;
@@ -137,13 +143,27 @@ export function openTypeCase(host: HTMLElement, options: TypeCaseOptions): TypeC
     layout.rows.map((row, i) => h('div', { className: `tc-row tc-row-${i}` }, row.map(keyCap))),
   );
 
+  // Accented letters with no key of their own (ê on AZERTY, every accent on a US
+  // keyboard), so they can be picked too, with a link to how they're typed.
+  const stripChars = strippedAccents(layout, accents);
+  const accentStrip =
+    stripChars.length === 0
+      ? null
+      : h('div', { className: 'tc-accent-strip', role: 'group', 'aria-label': t('typeCase.accentStrip') }, [
+          h('span', { className: 'tc-strip-label' }, [t('typeCase.accentStrip')]),
+          h('div', { className: 'tc-strip-keys' }, stripChars.map((ch) => h('div', { className: 'tc-key' }, [charButton(ch, 'solo')]))),
+          options.onAccentHelp
+            ? h('button', { type: 'button', className: 'menu-link tc-strip-help', onClick: () => options.onAccentHelp?.() }, [t('contents.accentsHelp')])
+            : null,
+        ]);
+
   // --- Regions and presets -------------------------------------------------
 
   const regions = h(
     'div',
     { className: 'tc-chips', role: 'group', 'aria-label': t('typeCase.groups') },
-    regionsFor(layout).map((region) => {
-      const chars = regionChars(layout, region);
+    regionsFor(layout, accents).map((region) => {
+      const chars = regionChars(layout, region, accents);
       const button = h(
         'button',
         { type: 'button', className: 'tc-chip', onClick: () => set(toggleRegion(selection, chars)) },
@@ -214,6 +234,7 @@ export function openTypeCase(host: HTMLElement, options: TypeCaseOptions): TypeC
     suggestion,
     h('div', {}, [
       keyboard,
+      accentStrip,
       h('p', { className: 'tc-legend' }, [t('typeCase.legend'), ' ', t('typeCase.layoutNote', { layout: t(`layout.${layout.id}` as MessageKey) })]),
     ]),
     h('section', {}, [h('h3', {}, [t('typeCase.groups')]), regions]),
@@ -236,8 +257,8 @@ export function openTypeCase(host: HTMLElement, options: TypeCaseOptions): TypeC
     for (const [ch, buttons] of charButtons) {
       for (const button of buttons) button.setAttribute('aria-pressed', String(selection.has(ch)));
     }
-    for (const region of regionsFor(layout)) {
-      const state = regionState(selection, regionChars(layout, region));
+    for (const region of regionsFor(layout, accents)) {
+      const state = regionState(selection, regionChars(layout, region, accents));
       regionButtons.get(region)?.setAttribute('aria-pressed', state === 'all' ? 'true' : state === 'some' ? 'mixed' : 'false');
     }
     const active = matchingPreset([...options.builtInPresets, ...custom], selection);

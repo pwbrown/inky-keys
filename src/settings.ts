@@ -5,6 +5,7 @@
 import type { Platform } from './content/layouts/types';
 import { detectPlatform } from './input/keyboard';
 import { THEMES, type ThemeId } from './render/theme';
+import { LANGUAGES, languageFromTag, type Language } from './core/languages';
 
 export type TextSize = 'normal' | 'large' | 'larger';
 export type MotionSetting = 'system' | 'reduced' | 'full';
@@ -31,6 +32,8 @@ export const MOTION_SETTINGS: readonly MotionSetting[] = ['system', 'reduced', '
 export const TEXT_SCALE: Record<TextSize, number> = { normal: 1, large: 1.2, larger: 1.4 };
 
 export interface Settings {
+  /** Language of menus and messages on this device; from the browser language the first time. */
+  menuLanguage: Language;
   textSize: TextSize;
   theme: ThemeId;
   motion: MotionSetting;
@@ -45,6 +48,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  menuLanguage: languageFromTag(globalThis.navigator?.language),
   textSize: 'normal',
   theme: 'classic',
   motion: 'system',
@@ -66,6 +70,7 @@ export function parseSettings(raw: unknown): Settings {
     allowed.includes(value as T) ? (value as T) : fallback;
   const volume = typeof s.volume === 'number' && Number.isFinite(s.volume) ? Math.min(1, Math.max(0, s.volume)) : DEFAULT_SETTINGS.volume;
   return {
+    menuLanguage: pick(s.menuLanguage, LANGUAGES, DEFAULT_SETTINGS.menuLanguage),
     textSize: pick(s.textSize, TEXT_SIZES, DEFAULT_SETTINGS.textSize),
     theme: pick(s.theme, THEMES, DEFAULT_SETTINGS.theme),
     motion: pick(s.motion, MOTION_SETTINGS, DEFAULT_SETTINGS.motion),

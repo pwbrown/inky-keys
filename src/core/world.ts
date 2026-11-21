@@ -34,6 +34,7 @@ import { ABILITIES, type AbilityId, type ActiveAbility } from './abilities';
 import { guidedSpawn, pendingBriefings, type MechanicId } from './mechanics';
 import { seeded } from './rng';
 import { createStats, type Stats } from './stats';
+import { charAt } from './text';
 
 /** Logical play-field size. The renderer scales this to fit the window. */
 export const WORLD_WIDTH = 1280;
@@ -277,6 +278,15 @@ export interface World {
   eraserGraceMs: number;
   /** A dead key's accent waiting for its letter (`^` before `e`), shown by the Nib; null when none. */
   pendingAccent: string | null;
+  /** Forgiving accents (the player's setting): a plain letter counts for its accented one (e for é). */
+  forgivingAccents: boolean;
+  /** In an accent chapter, the letters it teaches (for the HUD). */
+  accentLetters: readonly string[];
+  /**
+   * The last miss on an accented letter: that creature shows how to type it
+   * while the letter is still next (render/renderer.ts). `key` is what was pressed.
+   */
+  accentHint: { targetId: number; char: string; key: string } | null;
   /**
    * Lanes a Squid has squirted ink over: their words are hidden for `ms`
    * more. The ink landed at `x`, squirted from (`fromX`, `fromY`).
@@ -346,24 +356,34 @@ export function createPage(
   bossTurn = 0,
 ): PageState {
   const apprentice = mode === 'apprentice';
+  const accents = mode === 'accents';
   // Digits and symbols get their own Free Write pages when there are enough
   // of them (GAME_CONFIG.symbolPages); otherwise drips use every key.
   const separate =
     !apprentice &&
+    !accents &&
     content?.poolSize !== undefined &&
     content.poolSize('letters') > 0 &&
     content.poolSize('symbols') >= GAME_CONFIG.symbolPages.minKeys;
-  const fullPlan = apprentice ? apprenticePlan(chapter) : mode === 'daily' ? GAME_CONFIG.daily.plan : chapterPlan(chapter);
+  const fullPlan = apprentice
+    ? apprenticePlan(chapter)
+    : accents
+      ? GAME_CONFIG.accents.plan
+      : mode === 'daily'
+        ? GAME_CONFIG.daily.plan
+        : chapterPlan(chapter);
   const plan = separate ? fullPlan : fullPlan.filter((kind) => kind !== 'symbols');
   const canUse = content ? (kind: TargetKind) => content.supports(kind) : undefined;
   let params: PageParams;
-  if (apprentice) {
+  if (apprentice || accents) {
     // The Apprentice climbs a gentler curve, with extra easing for beginners,
-    // and harder difficulties blend in over the first chapters.
-    const eff = effectiveChapter(chapter);
+    // and harder difficulties blend in over the first chapters. Accent
+    // chapters are all paced like one gentle Apprentice chapter.
+    const course = accents ? GAME_CONFIG.accents.paceChapter : chapter;
+    const eff = effectiveChapter(course);
     let raw = pageParams(difficulty, eff, index, canUse, plan);
-    if (DIFFICULTY_PROFILES[difficulty].speed > 1) raw = easeDifficulty(raw, pageParams('normal', eff, index, canUse, plan), chapter);
-    params = { ...easeForBeginners(raw, chapter), sprinkles: sprinkleChances(raw.kind, chapter, true, canUse) };
+    if (DIFFICULTY_PROFILES[difficulty].speed > 1) raw = easeDifficulty(raw, pageParams('normal', eff, index, canUse, plan), course);
+    params = { ...easeForBeginners(raw, course), sprinkles: sprinkleChances(raw.kind, course, true, canUse) };
   } else {
     params = pageParams(difficulty, chapter, index, canUse, plan);
   }
@@ -445,6 +465,9 @@ export function createWorld(options: WorldOptions = {}): World {
     eraserRun: 0,
     eraserGraceMs: 0,
     pendingAccent: null,
+    forgivingAccents: false,
+    accentLetters: [],
+    accentHint: null,
     smudges: [],
     shield: false,
     shieldEarned: false,
@@ -651,7 +674,7 @@ function payloadFor(
   // Creatures with several lives carry shorter words.
   const complexity = world.page.params.complexity * (GAME_CONFIG.variants.complexityScale[maxLives] ?? 1);
   const { content } = world;
-  const taken = new Set(world.targets.map((t) => t.text[t.typed]));
+  const taken = new Set(world.targets.map((t) => charAt(t.text, t.typed)));
   const next = () =>
     kind === 'drip'
       ? content.nextChar(random, world.page.params.pool)
@@ -662,6 +685,16 @@ function payloadFor(
   let text = next();
   for (let i = 1; i < DISTINCT_FIRST_CHAR_TRIES && taken.has(text[0]); i++) text = next();
   return kind === 'runon' ? { text, buffer: '', cursor: 0 } : { text };
+}
+
+/**
+ * Slow a creature so each extra key press its text needs (an accent: ^ then e)
+ * adds `GAME_CONFIG.accents.slowdownSecPerPress` to its trip across the page.
+ */
+export function accentPaced(speed: number, extraPresses: number): number {
+  if (extraPresses <= 0 || speed <= 0) return speed;
+  const distance = SPAWN_X - MARGIN_X;
+  return distance / (distance / speed + extraPresses * GAME_CONFIG.accents.slowdownSecPerPress);
 }
 
 /**
@@ -692,16 +725,18 @@ export function spawnTarget(world: World, overrides: Partial<Target> = {}): Targ
   const revealX = isGhost ? (world.highlightMs > 0 ? REVEALED_X : ghostRevealX(random())) : undefined;
   // Never faster than the target ahead in the same lane, so they can't overlap.
   const leaderSpeed = Math.min(...world.targets.filter((t) => t.lane === lane).map((t) => t.speed));
+  const payload = payloadFor(world, kind, startLives, random);
+  const jittered = speed * (1 + (random() * 2 - 1) * jitter);
   const target: Target = {
     id: world.nextId++,
     kind,
-    ...payloadFor(world, kind, startLives, random),
+    ...payload,
     typed: 0,
     x: SPAWN_X,
     prevX: SPAWN_X,
     y: laneY(lane, world.laneStep),
     lane,
-    speed: Math.min(leaderSpeed, speed * (1 + (random() * 2 - 1) * jitter)),
+    speed: Math.min(leaderSpeed, accentPaced(jittered, world.content.extraPresses?.(payload.text) ?? 0)),
     lives,
     ghost: isGhost,
     ...(revealX === undefined ? {} : { revealX }),

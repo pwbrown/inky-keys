@@ -16,7 +16,7 @@ import { pageGrade } from '../core/grade';
 import type { Cosmetics } from '../core/rewards';
 import type { SeasonId } from '../core/seasons';
 import { FIRST_LINE_Y, LINE_SPACING, MARGIN_X, WORLD_HEIGHT, WORLD_WIDTH, laneCount } from '../core/world';
-import { formatNumber, t, type MessageKey } from '../i18n';
+import { formatNumber, t, tCount, type MessageKey } from '../i18n';
 import { Effects } from './effects';
 import { drawPage, splatterColor } from './renderer';
 import { SeasonDecor } from './seasonDecor';
@@ -464,7 +464,7 @@ export class FairCopyView {
     if (r.mistakesLeft > 0) {
       centred(
         new Text({
-          text: t(r.mistakesLeft === 1 ? 'fairCopy.card.penaltyOne' : 'fairCopy.card.penalty', {
+          text: tCount('fairCopy.card.penalty', r.mistakesLeft, {
             lost: formatNumber(Math.round(r.penaltyWpm)),
             count: formatNumber(r.mistakesLeft),
           }),

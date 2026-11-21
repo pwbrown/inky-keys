@@ -4,7 +4,8 @@
  * right next to the button, so it's clear what gets sent before anything is.
  */
 import './dialog.css';
-import { VocabError, fetchTopicWords, type Dictionary } from '../content/vocabApi';
+import { VOCAB_API_ORIGINS, VocabError, fetchTopicWords, type Dictionary } from '../content/vocabApi';
+import type { Language } from '../core/languages';
 import type { Blocklist } from '../content/blocklist';
 import { formatNumber, t, type MessageKey } from '../i18n';
 import type { VocabList } from '../storage/schema';
@@ -23,10 +24,14 @@ export interface WordListsOptions {
   onClose(): void;
   /** Injected for tests. */
   fetchImpl?: typeof fetch;
+  /** The player's words language: which Wikipedia is asked, and which lists are shown. */
+  lang?: Language;
 }
 
 export function openWordLists(host: HTMLElement, options: WordListsOptions): { close(): void } {
-  let lists = [...options.lists];
+  const lang = options.lang ?? 'en';
+  // Lists in other words languages stay saved, but only this language's are shown and used.
+  let lists = options.lists.filter((l) => l.lang === lang);
   const previousFocus = document.activeElement as HTMLElement | null;
 
   const status = h('p', { className: 'sd-status', role: 'status', 'aria-live': 'polite' });
@@ -97,9 +102,10 @@ export function openWordLists(host: HTMLElement, options: WordListsOptions): { c
         button.disabled = true;
         status.textContent = t('vocab.downloading', { topic });
         try {
-          const result = await fetchTopicWords(input.value, options.dictionary, options.blocklist, options.fetchImpl);
+          const result = await fetchTopicWords(input.value, options.dictionary, options.blocklist, options.fetchImpl, lang);
           const list: VocabList = {
             id: `vocab-${Date.now()}`,
+            lang,
             topic: result.topic,
             words: result.words,
             enabled: true,
@@ -135,7 +141,7 @@ export function openWordLists(host: HTMLElement, options: WordListsOptions): { c
     h('header', {}, [
       h('h2', { id: 'wl-title' }, [t('vocab.title')]),
       h('p', { className: 'tc-intro' }, [t('vocab.intro')]),
-      h('p', { className: 'tc-intro wl-privacy' }, [t('vocab.privacy')]),
+      h('p', { className: 'tc-intro wl-privacy' }, [t('vocab.privacy', { site: new URL(VOCAB_API_ORIGINS[lang]).host })]),
     ]),
     h('div', { className: 'sd-row' }, [form, status]),
     h('div', { className: 'sd-row' }, [h('h3', {}, [t('vocab.saved')]), listBox]),

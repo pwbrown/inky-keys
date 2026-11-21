@@ -9,8 +9,11 @@ import { US_QWERTY } from '../content/layouts/us-qwerty';
 import type { Grade } from './grade';
 import { GAME_CONFIG, type BossKind, type PageParams, type TargetKind } from './config';
 
-/** The Daily Page is one short seeded notebook, the same for everyone that day (core/daily.ts). */
-export type GameMode = 'apprentice' | 'practice' | 'daily';
+/**
+ * The Daily Page is one short seeded notebook, the same for everyone that day (core/daily.ts).
+ * An accent chapter (core/accents.ts) is one short notebook teaching a few accented letters.
+ */
+export type GameMode = 'apprentice' | 'practice' | 'daily' | 'accents';
 
 export interface Lesson {
   /** Keys introduced in this chapter. */
@@ -116,6 +119,8 @@ export function easeForBeginners(params: PageParams, chapter: number): PageParam
  */
 export function bossFor(mode: GameMode, chapter: number, turn = 0): BossKind | null {
   const b = GAME_CONFIG.boss;
+  // Accent chapters are short lessons: no boss.
+  if (mode === 'accents') return null;
   const from = mode === 'apprentice' ? b.fromApprenticeChapter : b.fromChapter;
   if (chapter < from) return null;
   return b.order[(chapter - from + turn) % b.order.length]!;

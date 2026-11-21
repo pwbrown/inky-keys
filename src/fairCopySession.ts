@@ -13,7 +13,7 @@ import { PASSAGE_BREAK, backspace, chainPassages, createFairCopy, drawPassages, 
 import type { Cosmetics } from './core/rewards';
 import type { SeasonId } from './core/seasons';
 import { WORLD_HEIGHT, WORLD_WIDTH } from './core/world';
-import { formatNumber, t } from './i18n';
+import { formatNumber, tCount } from './i18n';
 import { bindKeyboard } from './input/keyboard';
 import { FairCopyView, type FairCopyRecord } from './render/fairCopyView';
 
@@ -187,7 +187,7 @@ export class FairCopySession {
       const copiedId = this.options.mode === null ? (this.passages[0]?.id ?? null) : null;
       this.view.setRecord(this.options.onFinished?.(r, this.options.mode, copiedId) ?? null);
       this.options.announce(
-        t(r.mistakesLeft === 1 ? 'fairCopy.announceOne' : 'fairCopy.announce', {
+        tCount('fairCopy.announce', r.mistakesLeft, {
           wpm: formatNumber(Math.round(r.netWpm)),
           accuracy: formatNumber(Math.round(r.accuracy * 100)),
           left: formatNumber(r.mistakesLeft),

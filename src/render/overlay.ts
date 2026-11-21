@@ -227,6 +227,15 @@ export function overlayContent(world: World, context: OverlayContext = NO_CONTEX
           prompt: t('overlay.daily.donePrompt'),
         };
       }
+      if (world.mode === 'accents') {
+        return {
+          title: t('overlay.accents.title', { chapter: world.page.chapter + 1 }),
+          lines: [t('overlay.accents.body')],
+          tiles: statTiles(world.stats).slice(0, 3),
+          chips: extra,
+          prompt: t('overlay.accents.prompt'),
+        };
+      }
       return {
         title: t('overlay.complete.title'),
         lines: [t('overlay.complete.body')],

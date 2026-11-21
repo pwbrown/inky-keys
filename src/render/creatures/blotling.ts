@@ -6,6 +6,7 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { GAME_CONFIG } from '../../core/config';
 import type { SeasonId } from '../../core/seasons';
 import type { Target } from '../../core/world';
+import { splitAt } from '../../core/text';
 import { HOLIDAY, accessoryFor, drawHeadAccessory, drawTurkeyTail } from '../holidayArt';
 import { COLORS } from '../theme';
 import {
@@ -181,8 +182,7 @@ export function createBlotling(target: Target, scale: number, season: SeasonId |
             .fill({ color: COLORS.highlighter, alpha: 0.8 });
         }
         shownTyped = t.typed;
-        const typed = t.text.slice(0, t.typed);
-        const rest = t.text.slice(t.typed);
+        const [typed, rest] = splitAt(t.text, t.typed);
         typedLabel.text = typed;
         restLabel.text = rest;
         typedLabel.x = padX;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Blocklist, normalizeForCheck } from './blocklist';
+import { Blocklist, INFLECTIONS, normalizeForCheck } from './blocklist';
 
 // Mild stand-in terms keep this file readable; the real list is in content/en.
 const list = new Blocklist(['darn', 'heck', 'blast', 'xx', 'g-rr', '🖕'], ['blastoff']);
@@ -41,5 +41,20 @@ describe('Blocklist', () => {
     expect(list.blocksString('zh3ckz')).toBe(true);
     expect(list.blocksString('d.a.r.n')).toBe(true);
     expect(list.blocksString('dran')).toBe(false);
+  });
+
+  it('folds accents, so accented spellings of a term are caught', () => {
+    expect(normalizeForCheck('Pùte')).toBe('pute');
+    const fr = new Blocklist(['pute', 'merde'], [], INFLECTIONS.fr);
+    expect(fr.blocksWord('pùte')).toBe(true);
+    expect(fr.blocksWord('putes')).toBe(true);
+    expect(fr.blocksWord('mèrde')).toBe(true);
+    expect(fr.blocksString('zzmérdezz')).toBe(true);
+  });
+
+  it('uses the endings of the list’s language', () => {
+    const fr = new Blocklist(['zut'], [], INFLECTIONS.fr);
+    expect(fr.blocksWord('zutée')).toBe(true);
+    expect(fr.blocksWord('zuting')).toBe(false);
   });
 });

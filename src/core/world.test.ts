@@ -3,6 +3,7 @@ import { createContentSource } from '../content/contentSource';
 import { GAME_CONFIG } from './config';
 import {
   MARGIN_X,
+  accentPaced,
   SPAWN_X,
   WORLD_HEIGHT,
   WORLD_WIDTH,
@@ -263,3 +264,13 @@ describe('drip pools', () => {
   });
 });
 
+
+describe('accent pacing', () => {
+  it('gives a creature longer to cross for each extra key press', () => {
+    expect(accentPaced(100, 0)).toBe(100);
+    const slower = accentPaced(100, 2);
+    expect(slower).toBeLessThan(100);
+    const distance = SPAWN_X - MARGIN_X;
+    expect(distance / slower - distance / 100).toBeCloseTo(2 * GAME_CONFIG.accents.slowdownSecPerPress);
+  });
+});

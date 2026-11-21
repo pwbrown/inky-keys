@@ -11,9 +11,14 @@ export type RegionId = 'lowercase' | 'uppercase' | 'accents' | 'digits' | 'symbo
 /** Every group a layout can have; `accents` is empty on layouts without accent keys (regionsFor leaves it out). */
 export const REGIONS: readonly RegionId[] = ['lowercase', 'uppercase', 'accents', 'digits', 'symbols', 'space'];
 
-/** The groups this layout has keys for, in order. */
-export function regionsFor(layout: KeyboardLayout): RegionId[] {
-  return REGIONS.filter((id) => regionChars(layout, id).length > 0);
+/**
+ * The groups this layout has keys for, in order. `accents` are the words
+ * language's accented letters the player can type (core/accents.ts), which
+ * join the accents group even when they have no key of their own (ê on AZERTY,
+ * every accent on a US keyboard).
+ */
+export function regionsFor(layout: KeyboardLayout, accents: readonly string[] = []): RegionId[] {
+  return REGIONS.filter((id) => regionChars(layout, id, accents).length > 0);
 }
 
 const isLetter = (ch: string) => /^\p{L}$/u.test(ch);
@@ -68,11 +73,19 @@ function keyChars(layout: KeyboardLayout): { ch: string; region: RegionId }[] {
   return out;
 }
 
-/** Characters in a region, in keyboard order: plain keys first, then shifted. */
-export function regionChars(layout: KeyboardLayout, region: RegionId): string[] {
-  return keyChars(layout)
+/** Characters in a region, in keyboard order: plain keys first, then shifted (then accents typed with two keys). */
+export function regionChars(layout: KeyboardLayout, region: RegionId, accents: readonly string[] = []): string[] {
+  const chars = keyChars(layout)
     .filter((c) => c.region === region)
     .map((c) => c.ch);
+  if (region !== 'accents') return chars;
+  return [...chars, ...accents.filter((ch) => !chars.includes(ch))];
+}
+
+/** The words language's accented letters that have no key of their own on this layout (the Type Case's Accents strip). */
+export function strippedAccents(layout: KeyboardLayout, accents: readonly string[]): string[] {
+  const onKeys = layoutChars(layout);
+  return accents.filter((ch) => !onKeys.has(ch));
 }
 
 /** The symbols on the digit keys, plain or shifted (`!@#$%^&*()` on US QWERTY). */
@@ -81,6 +94,9 @@ function digitKeySymbols(layout: KeyboardLayout): string[] {
   const symbols = regionChars(layout, 'symbols');
   return symbols.filter((ch) => digitKeys.some((k) => k.base === ch || k.shift === ch));
 }
+
+/** The "Letters + accents" preset's id. */
+export const LETTERS_ACCENTS = 'lettersAccents';
 
 export interface Preset {
   id: string;
@@ -104,8 +120,8 @@ export function homeRowLesson(layout: KeyboardLayout): string[] {
  * one includes space, so real words and phrases show up; only the Apprentice
  * course (apprenticePreset) holds space back until its own chapter.
  */
-export function builtInPresets(layout: KeyboardLayout): Preset[] {
-  const r = (id: RegionId) => regionChars(layout, id);
+export function builtInPresets(layout: KeyboardLayout, accents: readonly string[] = []): Preset[] {
+  const r = (id: RegionId) => regionChars(layout, id, accents);
   const preset = (id: string, chars: string[]): Preset => ({ id, chars: [...new Set([...chars, ' '])], builtIn: true });
   const home = homeRowLesson(layout);
   const topRow = (layout.rows[1] ?? []).filter(isLetterKey).map((k) => k.base);
@@ -118,6 +134,8 @@ export function builtInPresets(layout: KeyboardLayout): Preset[] {
     // What a brand-new player starts with (DEFAULT_KEYS in config.ts), shown as "All letters".
     preset('lettersCapitals', [...r('lowercase'), ...r('uppercase')]),
     preset('lettersPunctuation', [...r('lowercase'), ...r('uppercase'), ...[',', '.', "'", '?', '!'].filter((ch) => chars.has(ch))]),
+    // Accent practice, for a words language with accents: words lean towards accented ones.
+    ...(accents.length > 0 ? [preset(LETTERS_ACCENTS, [...r('lowercase'), ...accents])] : []),
     preset('numbers', r('digits')),
     preset('numberSymbols', digitKeySymbols(layout)),
     preset('symbols', r('symbols')),
@@ -141,8 +159,8 @@ export function apprenticePreset(layout: KeyboardLayout, unlocked: number, name:
  * becomes the same preset on the new layout (the home row stays the home
  * row); any other selection is kept as it is.
  */
-export function remapSelection(from: KeyboardLayout, to: KeyboardLayout, keys: readonly string[], unlocked: number): string[] {
-  const presets = (layout: KeyboardLayout) => [apprenticePreset(layout, unlocked, ''), ...builtInPresets(layout)];
+export function remapSelection(from: KeyboardLayout, to: KeyboardLayout, keys: readonly string[], unlocked: number, accents: readonly string[] = []): string[] {
+  const presets = (layout: KeyboardLayout) => [apprenticePreset(layout, unlocked, ''), ...builtInPresets(layout, accents)];
   const match = matchingPreset(presets(from), keys);
   const target = match && presets(to).find((p) => p.id === match.id);
   return target ? orderedSelection(to, target.chars) : [...keys];

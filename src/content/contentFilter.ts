@@ -79,3 +79,53 @@ export const ALWAYS_BLOCKED: readonly string[] = [
 
 /** Every term the filter blocks on top of the LDNOOBW list. */
 export const FILTER_TERMS: readonly string[] = [...ALWAYS_BLOCKED, ...Object.values(GROUP_TERMS).flat()];
+
+/**
+ * French terms for the family-friendly filter, on top of LDNOOBW's French list,
+ * grouped like GROUP_TERMS (drafted by Claude; reviewed with the French word pack).
+ * Accents don't matter: the check folds them away.
+ */
+export const FILTER_TERMS_FR: readonly string[] = [
+  // identity
+  'homo', 'homos', 'lesbienne', 'lesbiennes',
+  // toilet
+  'pet', 'prout', 'crotte', 'crottes', 'vomi', 'vomir', 'morve', 'morveux', 'roter', 'fesse', 'fesses',
+  'popo', 'zizi', 'kaka', 'pisse', 'urine', 'uriner',
+  // insults
+  'idiot', 'idiote', 'imbecile', 'cretin', 'cretine', 'debile', 'abruti', 'abrutie', 'stupide', 'pignouf', 'nullard', 'tare', 'taree', 'mongol', 'gogol', 'triso', 'damne',
+  // body
+  'penis', 'vagin', 'sein', 'seins', 'testicule', 'scrotum', 'uterus', 'ovaire', 'ovaires', 'ovulation',
+  'grossesse', 'avortement', 'avorter', 'foetus', 'placenta', 'preservatif', 'menstruation', 'menstruel',
+  'puberte', 'pubien', 'pubienne', 'genital', 'genitale', 'genitaux', 'rectum', 'anus', 'anal', 'anale',
+  'sperme', 'erection', 'circoncision', 'syphilis', 'venerien', 'nibar', 'nichon', 'nichons', 'tetons',
+  'virginite', 'entrejambe', 'laxatif', 'lavement', 'sexe', 'sexes', 'sexuel', 'sexuelle', 'sexuels',
+  'sexuelles', 'sexualite', 'sexiste', 'sexisme',
+  // substances
+  'drogue', 'drogues', 'drogue', 'droguer', 'cocaine', 'heroinomane', 'opium', 'morphine', 'cannabis',
+  'haschich', 'marijuana', 'shoote', 'defonce', 'alcool', 'alcools', 'alcoolique',
+  'alcoolisme', 'ivre', 'ivres', 'ivresse', 'ivrogne', 'saoul', 'saoule',
+  'biere', 'bieres', 'vin', 'vins', 'vodka', 'whisky', 'rhum', 'cognac', 'tequila', 'pastis', 'absinthe',
+  'cigarette', 'cigarettes', 'cigare', 'cigares', 'tabac', 'nicotine', 'clope', 'clopes',
+  // violence
+  'meurtre', 'meurtres', 'meurtrier', 'meurtriere', 'assassin', 'assassinat', 'assassiner', 'homicide',
+  'massacre', 'massacrer', 'genocide', 'egorger', 'etrangler', 'decapiter', 'decapite', 'mutiler',
+  'torture', 'torturer', 'tortionnaire', 'cadavre', 'cadavres', 'suicide', 'suicider', 'suicidaire',
+  'pendaison', 'kidnapper', 'kidnapping', 'enlevement', 'terroriste', 'terrorisme', 'holocauste',
+  'bourreau', 'guillotine', 'carnage', 'tuerie', 'fusillade', 'viol', 'violer', 'violeur', 'castrer',
+  'castration', 'satanique', 'satanisme',
+  // mature
+  'erotique', 'erotisme', 'sexy', 'porno', 'pornographie', 'pornographique', 'coit', 'copuler',
+  'fornication', 'forniquer', 'adultere', 'adulteres', 'luxure', 'lubrique', 'obscene', 'bordel',
+  'prostituee', 'prostitue', 'prostitution', 'proxenete', 'courtisane', 'concubine', 'seduire',
+  'seducteur', 'seductrice', 'seduction', 'pervers', 'perverse', 'perversion', 'fetichiste', 'orgie',
+  'orgies', 'nudiste', 'nudisme', 'strip', 'striptease', 'lingerie', 'string', 'strings',
+  'fessee', 'sadique', 'sadisme', 'masochiste', 'masochisme', 'gigolo', 'pedophile', 'pedophilie',
+  'catin', 'trainee', 'gourgandine', 'baisable', 'pucelle', 'puceau', 'amante', 'cocu', 'cocue',
+  // slurs and crude words LDNOOBW's French list misses
+  'negre', 'negresse', 'bougnoule', 'youpin', 'bicot', 'chintok', 'romanichel', 'manouche', 'gitan',
+  'gitane', 'tantouze', 'tarlouze', 'fiotte', 'goudou', 'debile', 'gogole', 'batard',
+  'batarde', 'emmerde', 'chiant', 'chiante', 'chieur', 'pisseux', 'enfoire', 'salopard', 'saloperie',
+  'garce', 'couillon', 'couillonne', 'pouffe', 'grognasse', 'putassier', 'bourrin', 'baise',
+  'nique', 'niquer', 'zob', 'couille', 'fion', 'bamboula', 'boche', 'rital', 'chinetoque', 'came', 'camé',
+  'dealer', 'dealers', 'beuh', 'shit', 'teub', 'tafiole',
+];

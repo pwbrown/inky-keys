@@ -4,6 +4,7 @@ import { US_QWERTY } from '../content/layouts';
 import { GAME_CONFIG } from './config';
 import { DAILY_PAGES, dailyId, dailyKeys, dailyPages, dailySeed, streakWeek } from './daily';
 import { canRestart, confirm, finishedNotebook, restartPage, startDaily, typeChar } from './input';
+import { hashSeed } from './rng';
 import { createStats, earnPoints } from './stats';
 import { createWorld, spawnBottle, spawnTarget, type World } from './world';
 
@@ -182,5 +183,20 @@ describe('score breakdown', () => {
     expect(s.errors).toBe(1);
     expect(s.comboPoints).toBeGreaterThan(0);
     expect(s.basePoints + s.comboPoints + s.bonusPoints - s.penalty).toBe(s.score);
+  });
+});
+
+describe('Daily Page in another words language', () => {
+  it('keeps English seeds exactly as before', () => {
+    expect(dailySeed(5, 'us-qwerty', 'en')).toBe(hashSeed('daily:5:us-qwerty'));
+    expect(dailySeed(5, 'us-qwerty')).toBe(dailySeed(5, 'us-qwerty', 'en'));
+  });
+
+  it('gives French its own seed and the common accents', () => {
+    expect(dailySeed(5, 'fr-azerty', 'fr')).not.toBe(dailySeed(5, 'fr-azerty'));
+    const keys = dailyKeys(US_QWERTY, 'fr');
+    expect(keys).toEqual(expect.arrayContaining(['é', 'è', 'à', 'ù', 'ç', 'â', 'ê', 'î', 'ô', 'û']));
+    expect(keys).not.toContain('ë');
+    expect(dailyKeys(US_QWERTY, 'en')).toEqual(dailyKeys(US_QWERTY));
   });
 });

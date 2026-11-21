@@ -24,3 +24,4 @@ Each file is exported from the session log with `npm run transcript` (see `scrip
 - [2026-11-20-free-copy-game-mode-polish-45e7d1f9](2026-11-20-free-copy-game-mode-polish-45e7d1f9.md)
 - [2026-11-20-french-and-spanish-language-support-bb9f5c45](2026-11-20-french-and-spanish-language-support-bb9f5c45.md)
 - [2026-11-20-milestone-feedback-and-typing-mode-8be8c18f](2026-11-20-milestone-feedback-and-typing-mode-8be8c18f.md)
+- [2026-11-21-milestone-33-fran-ais-ae73be3f](2026-11-21-milestone-33-fran-ais-ae73be3f.md)

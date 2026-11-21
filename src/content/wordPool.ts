@@ -2,6 +2,7 @@
  * Word pool: the bundled word list filtered down to words the player can
  * type with their selected keys, ranked from easy to hard (REQUIREMENTS §6).
  */
+import { GAME_CONFIG } from '../core/config';
 
 export interface WordEntry {
   word: string;
@@ -28,26 +29,33 @@ export function typeableWith(word: string, keys: ReadonlySet<string>): boolean {
   return true;
 }
 
+/** Extra key presses a character takes beyond one (core/accents.ts `extraPresses`), weighted. */
+export type PressCost = (ch: string) => number;
+const noExtraPresses: PressCost = () => 0;
+
 /**
  * Difficulty from length, rarity of the word, and rare letters. Weights are
  * deliberately simple; tune them here.
  */
-export function wordDifficulty(entry: WordEntry, maxTier: number): number {
-  const length = Math.min(1, Math.max(0, (entry.word.length - 2) / 8));
+export function wordDifficulty(entry: WordEntry, maxTier: number, pressCost: PressCost = noExtraPresses): number {
+  // Length in key presses: an accent that takes two presses (^ then e) counts as more.
+  const letters = [...entry.word];
+  const presses = letters.reduce((sum, ch) => sum + 1 + pressCost(ch) * GAME_CONFIG.accents.pressWeight, 0);
+  const length = Math.min(1, Math.max(0, (presses - 2) / 8));
   const tier = maxTier > 0 ? entry.tier / maxTier : 0;
   let rare = 0;
-  for (const ch of entry.word) if (RARE.has(ch)) rare++;
-  const rareShare = rare / entry.word.length;
+  for (const ch of letters) if (RARE.has(ch)) rare++;
+  const rareShare = rare / letters.length;
   return 0.55 * length + 0.3 * tier + 0.15 * rareShare;
 }
 
 /** Words typeable with `keys`, sorted easiest first. */
-export function buildWordPool(entries: readonly WordEntry[], keys: Iterable<string>): RankedWord[] {
+export function buildWordPool(entries: readonly WordEntry[], keys: Iterable<string>, pressCost?: PressCost): RankedWord[] {
   const keySet = new Set(keys);
   const maxTier = entries.reduce((max, e) => Math.max(max, e.tier), 0);
   return entries
     .filter((e) => typeableWith(e.word, keySet))
-    .map((e) => ({ ...e, difficulty: wordDifficulty(e, maxTier) }))
+    .map((e) => ({ ...e, difficulty: wordDifficulty(e, maxTier, pressCost) }))
     .sort((a, b) => a.difficulty - b.difficulty || a.word.localeCompare(b.word));
 }
 

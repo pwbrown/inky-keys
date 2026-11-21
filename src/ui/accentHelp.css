@@ -1,0 +1,76 @@
+/* The accent help card (accentHelp.ts). Shares tokens with dialog.css. */
+
+.ah-panel {
+  width: min(720px, 100%);
+  text-align: left;
+}
+
+.ah-panel h2 {
+  text-align: center;
+}
+
+.ah-groups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.ah-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px 16px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--tc-ink);
+  border-radius: 12px;
+  background: #fffdf6;
+}
+
+.ah-none {
+  color: var(--tc-ink-light);
+  font-size: 15px;
+}
+
+.ah-setup {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1.5px dashed var(--tc-ink-light);
+  border-radius: 10px;
+}
+
+.ah-setup summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.ah-setup p {
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+.ah-forgiving {
+  margin-top: 12px;
+}
+
+/* The accent chapter's opening card (accentIntro.ts). */
+.ai-panel {
+  width: min(680px, 100%);
+}
+
+.bf-card.ai-card {
+  display: block;
+  padding: 20px 16px;
+}
+
+.ai-more {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px 16px;
+  border: 1.5px solid var(--tc-ink);
+  border-radius: 12px;
+  background: #fffdf6;
+}

@@ -9,7 +9,7 @@ describe('transfer links', () => {
     save.profile.ink = 4200;
     save.apprentice.unlocked = 9;
     save.keyStats.f = { hits: 120, misses: 4 };
-    save.vocab = [{ id: 'x', topic: 'space', words: ['comet', 'orbit'], enabled: true, fetchedAt: '2026-11-17T00:00:00.000Z' }];
+    save.vocab = [{ id: 'x', lang: 'en', topic: 'space', words: ['comet', 'orbit'], enabled: true, fetchedAt: '2026-11-17T00:00:00.000Z' }];
     const fragment = await encodeTransfer(save, { name: 'Pip', badge: 'teal' });
     expect(fragment).toMatch(/^t=[A-Za-z0-9_-]+$/);
     expect(hasTransfer(`#${fragment}`)).toBe(true);

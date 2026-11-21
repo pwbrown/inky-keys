@@ -107,3 +107,18 @@ describe('vocabulary download', () => {
     expect(await reason(fetchTopicWords('ocean', bigDictionary, blocklist, offline))).toBe('offline');
   });
 });
+
+describe('French topic words', () => {
+  it('asks French Wikipedia and keeps accented words', () => {
+    expect(new URL(topicUrl('océan', 'fr')).host).toBe('fr.wikipedia.org');
+    expect(new URL(topicUrl('ocean')).host).toBe('en.wikipedia.org');
+    const dictionary = new Map([
+      ['baleine', 2],
+      ['marée', 2],
+      ['océan', 1],
+    ]);
+    const text = 'La baleine nage. La marée monte et la marée descend. La baleine chante dans l’océan, et la baleine plonge. La marée revient.';
+    const words = wordsFromArticle(text, 'océan', dictionary, new Blocklist([]));
+    expect(words).toEqual(expect.arrayContaining(['océan', 'baleine', 'marée']));
+  });
+});

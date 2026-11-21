@@ -17,6 +17,7 @@ import {
 } from '../core/world';
 import { newStickers, type StickerFacts } from '../core/stickers';
 import { levelForInk } from '../core/rewards';
+import type { Language } from '../core/languages';
 import { fairCopyKey, type DailyProgress, type DailyResult, type FairCopyBest, type KeyStat, type SaveData, type SavedNotebook } from './schema';
 
 /** Add a page's (or notebook's) per-key hits and misses to the saved totals. */
@@ -186,9 +187,11 @@ export function recordFairCopy(
   now = new Date(),
   /** The passage copied out to the end, for a whole-passage test. */
   passageId: string | null = null,
+  /** The words language of the test: bests are kept per language. */
+  lang: Language = 'en',
 ): { previous: FairCopyBest | null; isNew: boolean } {
   if (passageId !== null && !save.fairCopy.copied.includes(passageId)) save.fairCopy.copied.push(passageId);
-  const key = fairCopyKey(seconds);
+  const key = fairCopyKey(seconds, lang);
   const previous = save.fairCopy.best[key] ?? null;
   save.fairCopy.tests++;
   const isNew = result.netWpm > 0 && (previous === null || result.netWpm > previous.wpm);

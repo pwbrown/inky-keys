@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_KEYS } from '../../core/config';
 import { MIN_WORD_POOL, createContentSource } from '../contentSource';
-import { loadEnglishPack } from './index';
+import { loadPack } from '../packs';
 import wordsJson from './words.json';
 import { HOLIDAY_WORDS } from './holidays';
 
 describe('bundled English pack', async () => {
-  const pack = await loadEnglishPack();
+  const pack = await loadPack('en');
   const family = pack.words;
   const words = new Set(family.map((e) => e.word));
 
@@ -51,7 +51,7 @@ describe('bundled English pack', async () => {
 });
 
 describe('holiday words', async () => {
-  const pack = await loadEnglishPack();
+  const pack = await loadPack('en');
   const words = new Set(pack.words.map((e) => e.word));
   it('are all in the family-friendly pack, with no repeats', () => {
     for (const list of Object.values(HOLIDAY_WORDS)) {

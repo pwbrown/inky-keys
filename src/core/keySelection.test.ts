@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { COLEMAK, DVORAK, ES_ISO, FR_AZERTY, LAYOUTS, US_QWERTY, forPlatform } from '../content/layouts';
 import { DEFAULT_KEYS } from './config';
 import {
+  LETTERS_ACCENTS,
   REGIONS,
   apprenticePreset,
   builtInPresets,
@@ -13,6 +14,7 @@ import {
   regionsFor,
   regionState,
   remapSelection,
+  strippedAccents,
   toggleRegion,
 } from './keySelection';
 
@@ -170,5 +172,27 @@ describe('orderedSelection', () => {
 
   it('keeps characters the layout does not have, at the end', () => {
     expect(orderedSelection(layout, ['é', 'a'])).toEqual(['a', 'é']);
+  });
+});
+
+describe('accents of the words language', () => {
+  const fr = ['é', 'è', 'à', 'ù', 'ç', 'â', 'ê', 'î', 'ô', 'û', 'ë', 'ï', 'ü'];
+
+  it('join the Accents group, even without a key of their own', () => {
+    expect(regionsFor(US_QWERTY)).not.toContain('accents');
+    expect(regionChars(US_QWERTY, 'accents', fr)).toEqual(fr);
+    expect(regionChars(FR_AZERTY, 'accents', fr)).toEqual(expect.arrayContaining(fr));
+  });
+
+  it('the strip holds the ones with no key of their own', () => {
+    expect(strippedAccents(US_QWERTY, fr)).toEqual(fr);
+    expect(strippedAccents(FR_AZERTY, fr)).toEqual(['â', 'ê', 'î', 'ô', 'û', 'ë', 'ï', 'ü']);
+  });
+
+  it('adds a "Letters + accents" preset only when there are accents', () => {
+    expect(builtInPresets(US_QWERTY).some((p) => p.id === LETTERS_ACCENTS)).toBe(false);
+    const preset = builtInPresets(US_QWERTY, fr).find((p) => p.id === LETTERS_ACCENTS);
+    expect(preset?.chars).toEqual(expect.arrayContaining(['a', 'z', ' ', 'é', 'ü']));
+    expect(preset?.chars).not.toContain('A');
   });
 });

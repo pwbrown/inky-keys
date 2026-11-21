@@ -1,0 +1,209 @@
+/* Numbered keycaps showing how to type an accent (keySteps.ts). Shares tokens with dialog.css. */
+
+.ks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.ks-target {
+  font: 700 64px/1 Caveat, 'Segoe Print', Georgia, serif;
+  color: var(--tc-ink);
+  min-width: 1ch;
+  padding: 0 4px;
+  text-align: center;
+}
+
+.ks-equals {
+  font-size: 28px;
+  color: var(--tc-ink-light);
+}
+
+.ks-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ks-step {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+/* An arrow between steps. */
+.ks-step + .ks-step::before {
+  content: '→';
+  position: absolute;
+  left: -12px;
+  top: 22px;
+  transform: translateX(-50%);
+  color: var(--tc-ink-light);
+}
+
+.ks-step + .ks-step {
+  margin-left: 14px;
+}
+
+.ks-num {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--tc-ink);
+  color: var(--tc-paper);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.ks-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ks-plus {
+  color: var(--tc-ink-light);
+  font-weight: 700;
+}
+
+.ks-cap {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 8px;
+  border: 2px solid var(--tc-ink);
+  border-radius: 8px;
+  background: #fffdf6;
+  box-shadow: 0 4px 0 var(--tc-ink);
+  font: 700 22px/1 'Atkinson Hyperlegible Mono', ui-monospace, Menlo, monospace;
+  color: var(--tc-ink);
+}
+
+.ks-mod {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ks-makes {
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--tc-ink);
+  min-height: 1.2em;
+}
+
+.ks-dead .ks-makes {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tc-margin);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Small: one row of the help card. */
+.ks-small {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.ks-small .ks-target {
+  font-size: 34px;
+  min-width: 1.2ch;
+}
+
+.ks-small .ks-equals {
+  font-size: 18px;
+}
+
+.ks-small .ks-num {
+  display: none;
+}
+
+.ks-small .ks-cap {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  font-size: 15px;
+  border-width: 1.5px;
+  border-radius: 6px;
+  box-shadow: 0 2px 0 var(--tc-ink);
+}
+
+.ks-small .ks-mod {
+  font-size: 11px;
+}
+
+.ks-small .ks-makes {
+  display: none;
+}
+
+.ks-small .ks-step + .ks-step {
+  margin-left: 10px;
+}
+
+.ks-small .ks-step + .ks-step::before {
+  top: 6px;
+  left: -10px;
+}
+
+/* The keys press themselves in turn, then the letter appears; the loop restarts. */
+@keyframes ks-press {
+  0%, 8% { transform: translateY(0); box-shadow: 0 4px 0 var(--tc-ink); background: #fffdf6; }
+  12%, 22% { transform: translateY(4px); box-shadow: 0 0 0 var(--tc-ink); background: var(--tc-highlight); }
+  28%, 100% { transform: translateY(0); box-shadow: 0 4px 0 var(--tc-ink); background: #fffdf6; }
+}
+
+@keyframes ks-show {
+  0%, 18% { opacity: 0; transform: translateY(4px); }
+  26%, 92% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+
+.ks-large .ks-cap {
+  animation: ks-press 3.6s ease-out infinite;
+  animation-delay: calc(var(--ks-i) * 0.9s);
+}
+
+.ks-large .ks-makes {
+  animation: ks-show 3.6s ease-out infinite;
+  animation-delay: calc(var(--ks-i) * 0.9s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-large .ks-cap,
+  .ks-large .ks-makes {
+    animation: none;
+  }
+}
+
+:root[data-motion='reduced'] .ks-large .ks-cap,
+:root[data-motion='reduced'] .ks-large .ks-makes {
+  animation: none;
+}
+
+/* A key with two legends: its Shift character above (2 over é on AZERTY). */
+.ks-two {
+  grid-template-rows: auto auto;
+  gap: 0;
+  align-content: center;
+  line-height: 1;
+}
+
+.ks-top {
+  font-size: 0.7em;
+  color: var(--tc-ink-light);
+}
+
+.ks-two .ks-base {
+  font-size: 0.85em;
+}

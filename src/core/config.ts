@@ -449,6 +449,8 @@ export const GAME_CONFIG = {
     plan: ['drip', 'blotling', 'blotling'] as PageKind[],
     /** Results kept for the record (the best score and streaks are kept regardless). */
     keepResults: 60,
+    /** A words language's Daily Page includes the accents of its first accent chapters (French: not ë ï ü). */
+    accentChapters: 4,
   },
 
   /**
@@ -456,6 +458,26 @@ export const GAME_CONFIG = {
    * runs from `thanksgiving.daysBefore` days before the fourth Thursday of
    * November through the Sunday after; Christmas through December.
    */
+  /**
+   * Accented letters (core/accents.ts, REQUIREMENTS §13d): they cost extra key
+   * presses on most keyboards (ê is ^ then e), so they count for more.
+   */
+  accents: {
+    /** Each extra key press counts like this many more letters when ranking a word's difficulty. */
+    pressWeight: 1,
+    /** Each extra key press in a creature's text gives it this much longer to cross the page, in seconds. */
+    slowdownSecPerPress: 0.6,
+    /** With the "Letters + accents" preset, how much more often words with an accent are picked. */
+    practiceWeight: 3,
+    /** An accent chapter's pages (the Contents page's "Accents" part). */
+    plan: ['drip', 'blotling', 'blotling'] as TargetKind[],
+    /** Accent chapters are paced like this Apprentice chapter (a gentle one: the letters are new). */
+    paceChapter: 6,
+    /** In an accent chapter, how much more often its new letters come up as drips. */
+    newLetterWeight: 8,
+    /** In an accent chapter, how strongly words lean towards ones with an accent. */
+    chapterWordBias: 6,
+  },
   seasons: {
     thanksgiving: { daysBefore: 14, daysAfter: 3 },
     christmas: { from: { month: 12, day: 1 }, to: { month: 12, day: 31 } },

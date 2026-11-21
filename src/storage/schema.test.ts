@@ -31,13 +31,13 @@ describe('save schema', () => {
   it('upgrades version 2 saves: Apprentice progress starts fresh, old notebooks are Practice', () => {
     const save = migrate({ version: 2, notebook: { difficulty: 'hard', chapter: 1, page: 2, ink: 50 } });
     expect(save.version).toBe(SAVE_VERSION);
-    expect(save.apprentice).toEqual({ unlocked: 1, stars: {}, completed: false });
+    expect(save.apprentice).toEqual({ unlocked: 1, stars: {}, completed: false, accentStars: {} });
     expect(save.notebook?.mode).toBe('practice');
   });
 
   it('keeps valid Apprentice progress and drops bad entries', () => {
     const save = migrate({ version: 5, apprentice: { unlocked: 99, stars: { '0-1': 3, '2-0': 7, bad: 2 }, completed: true } });
-    expect(save.apprentice).toEqual({ unlocked: 27, stars: { '0-1': 3 }, completed: true });
+    expect(save.apprentice).toEqual({ unlocked: 27, stars: { '0-1': 3 }, completed: true, accentStars: {} });
   });
 
   it('upgrades version 3 saves with no ink and default cosmetics', () => {
@@ -57,7 +57,7 @@ describe('save schema', () => {
       notebook: { mode: 'apprentice', difficulty: 'normal', chapter: 3, page: 1, ink: 50 },
       profile: { ink: 300, cosmetics: { nib: 'quill' } },
     });
-    expect(appr.apprentice).toEqual({ unlocked: 1, stars: {}, completed: false });
+    expect(appr.apprentice).toEqual({ unlocked: 1, stars: {}, completed: false, accentStars: {} });
     expect(appr.notebook).toBeNull();
     expect(appr.profile.ink).toBe(300);
 
@@ -171,6 +171,29 @@ describe('save schema', () => {
     expect(save.fairCopy.copied).toEqual(['twain-huck']);
   });
 
+  it('gives version 15 saves English words, strict accents and no accent stars', () => {
+    const old = { ...defaultSave(), version: 15, apprentice: { unlocked: 4, stars: { '0-0': 3 }, completed: false } } as Record<string, unknown>;
+    delete old.wordsLanguage;
+    delete old.accents;
+    const save = migrate(old);
+    expect(save.wordsLanguage).toBe('en');
+    expect(save.accents).toEqual({ forgiving: false, seen: [] });
+    expect(save.apprentice).toEqual({ unlocked: 4, stars: { '0-0': 3 }, completed: false, accentStars: {} });
+  });
+
+  it('checks the words language, accent options and accent stars', () => {
+    const save = migrate({
+      ...defaultSave(),
+      wordsLanguage: 'klingon',
+      accents: { forgiving: true, seen: ['é', 'é', 'xx', 3] },
+      apprentice: { unlocked: 1, stars: {}, completed: false, accentStars: { fr: [3, 99, -1], xx: [1] } },
+    });
+    expect(save.wordsLanguage).toBe('en');
+    expect(save.accents).toEqual({ forgiving: true, seen: ['é'] });
+    expect(save.apprentice.accentStars).toEqual({ fr: [3, 9, 0] });
+    expect(migrate({ ...defaultSave(), wordsLanguage: 'fr' }).wordsLanguage).toBe('fr');
+  });
+
   it('drops unknown tutorial ids and keeps the tips choice', () => {
     const save = migrate({ version: 7, tutorials: { enabled: false, seen: ['basics', 'nonsense', 'basics', 4] } });
     expect(save.tutorials).toEqual({ enabled: false, seen: ['basics'] });
@@ -185,7 +208,7 @@ describe('save schema', () => {
         'junk',
       ],
     });
-    expect(save.vocab).toEqual([{ id: 'a', topic: 'ocean', words: ['sea', 'reef'], enabled: false, fetchedAt: '2026-01-01' }]);
+    expect(save.vocab).toEqual([{ id: 'a', lang: 'en', topic: 'ocean', words: ['sea', 'reef'], enabled: false, fetchedAt: '2026-01-01' }]);
   });
 
   it('cleans up bad fields instead of trusting them', () => {

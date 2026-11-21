@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { SITE_URL, loadPages, markdownToHtml, renderPage, sitemap } from '../scripts/site-pages.ts';
+import { SITE_URL, loadAllPages, loadPages, markdownToHtml, pagePath, renderPage, sitemap } from '../scripts/site-pages.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -38,5 +38,37 @@ describe('website pages (scripts/site-pages.ts)', () => {
     expect(markdownToHtml('## Hi\n\nSome **bold** and `code` <b>, [a link](https://x.org).\n\n- one\n- two\n  more')).toBe(
       '<h2>Hi</h2>\n<p>Some <strong>bold</strong> and <code>code</code> &lt;b&gt;, <a href="https://x.org">a link</a>.</p>\n<ul><li>one</li><li>two more</li></ul>',
     );
+  });
+
+  it('has French pages under /fr/, with the accent help page, linked to the English ones', () => {
+    const fr = loadPages(root, 'fr');
+    expect(fr.map((p) => p.slug).sort()).toEqual(['accents', 'how-to-play', 'parents-and-teachers', 'privacy']);
+    const all = loadAllPages(root);
+    for (const page of fr) {
+      expect(page.description.length, page.slug).toBeLessThanOrEqual(170);
+      const html = renderPage(page, '', all);
+      expect(html).toContain('<html lang="fr">');
+      expect(html).toContain(`<link rel="canonical" href="${SITE_URL}/fr/${page.slug}/"`);
+      expect(html).not.toMatch(/<script/);
+    }
+    const guide = renderPage(fr.find((p) => p.slug === 'how-to-play')!, '', all);
+    expect(guide).toContain(`hreflang="en" href="${SITE_URL}/how-to-play/"`);
+    expect(guide).toContain(`hreflang="fr" href="${SITE_URL}/fr/how-to-play/"`);
+    expect(guide).toContain('hreflang="x-default"');
+    expect(pagePath({ slug: 'privacy', locale: 'fr' })).toBe('/fr/privacy/');
+  });
+
+  it('shows every French accent with keys on AZERTY and US keyboards', () => {
+    const accents = loadPages(root, 'fr').find((p) => p.slug === 'accents')!;
+    for (const ch of 'éèàùçâêîôûëïü') expect(accents.body).toContain(`<th>${ch}</th>`);
+    expect(accents.body).not.toContain('<td>–</td>');
+    expect(accents.body).toContain('<kbd>Option</kbd>');
+    expect(accents.body).toContain('<kbd>AltGr</kbd>');
+  });
+
+  it('lists the French pages in the sitemap too', () => {
+    const xml = sitemap(loadAllPages(root), '2026-11-21');
+    expect(xml).toContain(`<loc>${SITE_URL}/fr/accents/</loc>`);
+    expect(xml).toContain(`<loc>${SITE_URL}/fr/privacy/</loc>`);
   });
 });

@@ -27,15 +27,20 @@ const LEET: Record<string, string> = {
  */
 export function normalizeForCheck(text: string): string {
   let out = '';
-  for (const ch of text.toLowerCase()) {
+  // Accents are folded away (é → e) so accented spellings can't slip past.
+  const folded = text.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+  for (const ch of folded) {
     const mapped = LEET[ch] ?? ch;
     if (/\p{L}/u.test(mapped)) out += mapped;
   }
   return out;
 }
 
-/** Endings that turn a blocked term into another form of the same word. */
-const INFLECTIONS = ['', 's', 'es', 'ed', 'd', 'er', 'ers', 'ing', 'y', 'ty', 'ier', 'iest', 'ies', 'ish', 'head', 'heads', 'hole', 'holes'];
+/** Endings that turn a blocked term into another form of the same word, per language (accents folded). */
+export const INFLECTIONS: Record<string, readonly string[]> = {
+  en: ['', 's', 'es', 'ed', 'd', 'er', 'ers', 'ing', 'y', 'ty', 'ier', 'iest', 'ies', 'ish', 'head', 'heads', 'hole', 'holes'],
+  fr: ['', 's', 'x', 'e', 'es', 'ee', 'ees', 'er', 'eur', 'eurs', 'euse', 'euses', 'ant', 'ent', 'ez', 'ons', 'ais', 'ait', 'aient', 'ie', 'ies'],
+};
 
 /** Long terms are distinctive enough to block anywhere inside a real word. */
 const CONTAINS_MIN_LENGTH = 5;
@@ -49,8 +54,9 @@ export class Blocklist {
    * @param terms Blocked words, in any case. Terms shorter than 3 letters
    *   (after normalizing) are dropped: they would reject too many strings.
    * @param allow Real words wrongly caught by the rules ("Scunthorpe problem").
+   * @param endings Inflections for the language (INFLECTIONS); English by default.
    */
-  constructor(terms: Iterable<string>, allow: Iterable<string> = []) {
+  constructor(terms: Iterable<string>, allow: Iterable<string> = [], endings: readonly string[] = INFLECTIONS.en!) {
     const clean = new Set<string>();
     for (const term of terms) {
       if (/\d/.test(term)) continue;
@@ -58,7 +64,7 @@ export class Blocklist {
       if (normalized.length >= 3) clean.add(normalized);
     }
     this.terms = [...clean].sort();
-    this.forms = new Set(this.terms.flatMap((t) => INFLECTIONS.map((suffix) => t + suffix)));
+    this.forms = new Set(this.terms.flatMap((t) => endings.map((suffix) => t + suffix)));
     this.allowed = new Set([...allow].map((w) => w.toLowerCase()));
   }
 

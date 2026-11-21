@@ -118,9 +118,11 @@ export class Hud {
             chapters: APPRENTICE_CHAPTERS,
             keys: newKeysFor(world.layout, chapter).map(keyLabel).join(' '),
           })
-        : world.mode === 'daily' && world.daily
-          ? t('hud.daily', { ...progress, id: world.daily.id })
-          : t('hud.page', progress),
+        : world.mode === 'accents'
+          ? t('hud.apprentice', { ...progress, keys: world.accentLetters.join(' ') })
+          : world.mode === 'daily' && world.daily
+            ? t('hud.daily', { ...progress, id: world.daily.id })
+            : t('hud.page', progress),
     );
   }
 

@@ -8,6 +8,7 @@
  */
 import { base64UrlToText, textToBase64Url } from './base64url';
 import type { Grade } from './grade';
+import { isLanguage, type Language } from './languages';
 
 export interface Challenge {
   /** The Daily Page number. */
@@ -19,6 +20,8 @@ export interface Challenge {
   grades: Grade[];
   /** Who sent it, if they chose to sign it. */
   name: string | null;
+  /** The words language it was played in. Links without one (older ones) mean English. */
+  words: Language;
 }
 
 /** The fragment key: `#c=…`. */
@@ -38,7 +41,16 @@ export function cleanChallengeName(name: unknown): string | null {
 
 /** The fragment for a challenge, e.g. "c=eyJ2Ijox…" (no leading #). */
 export function encodeChallenge(c: Challenge): string {
-  const payload = { v: VERSION, d: c.daily, l: c.layout, s: c.score, g: c.grades.join(','), ...(c.name ? { n: c.name } : {}) };
+  // English links stay exactly as they were; other words languages add `w`.
+  const payload = {
+    v: VERSION,
+    d: c.daily,
+    l: c.layout,
+    s: c.score,
+    g: c.grades.join(','),
+    ...(c.name ? { n: c.name } : {}),
+    ...(c.words !== 'en' ? { w: c.words } : {}),
+  };
   return `${CHALLENGE_PARAM}=${textToBase64Url(JSON.stringify(payload))}`;
 }
 
@@ -61,5 +73,6 @@ export function decodeChallenge(hash: string, isLayout: (id: string) => boolean)
   if (typeof v.l !== 'string' || !isLayout(v.l)) return null;
   const grades = typeof v.g === 'string' && v.g !== '' ? v.g.split(',') : [];
   if (grades.length > 10 || !grades.every((g) => GRADES.includes(g as Grade))) return null;
-  return { daily: v.d, layout: v.l, score: v.s, grades: grades as Grade[], name: cleanChallengeName(v.n) };
+  if (v.w !== undefined && !isLanguage(v.w)) return null;
+  return { daily: v.d, layout: v.l, score: v.s, grades: grades as Grade[], name: cleanChallengeName(v.n), words: isLanguage(v.w) ? v.w : 'en' };
 }

@@ -3,8 +3,12 @@ import 'pixi.js/unsafe-eval';
 import './style.css';
 import { countTypeableWords, createContentSource, MIN_WORD_POOL } from './content/contentSource';
 import { Blocklist } from './content/blocklist';
-import { loadEnglishPack, type ContentPack } from './content/en';
-import { HOLIDAY_WORDS } from './content/en/holidays';
+import { loadPack, type ContentPack } from './content/packs';
+import { LANGUAGE_NAMES, type Language } from './core/languages';
+import { ACCENT_CHAPTERS, accentedLetters, accentMethod, howToType, isAccented, plainLetter, pressCostFor } from './core/accents';
+import { stepText } from './ui/keySteps';
+import { openAccentHelp } from './ui/accentHelp';
+import { openAccentIntro } from './ui/accentIntro';
 import type { Dictionary } from './content/vocabApi';
 import { deadKeyMark, isLayoutId, layoutById, setLayoutPlatform } from './content/layouts';
 import type { LayoutId } from './content/layouts/types';
@@ -18,6 +22,7 @@ import {
   retryChapter,
   selectDifficulty,
   canRestart,
+  startAccents,
   startApprentice,
   startDaily,
   startPractice,
@@ -28,7 +33,7 @@ import {
   typeChar,
   type EditKey,
 } from './core/input';
-import { apprenticePreset, builtInPresets, matchingPreset, remapSelection, type Preset } from './core/keySelection';
+import { LETTERS_ACCENTS, apprenticePreset, builtInPresets, matchingPreset, remapSelection, type Preset } from './core/keySelection';
 import { unlockedAbilities, type ActiveAbility } from './core/abilities';
 import { GAME_CONFIG } from './core/config';
 import { FixedStepLoop } from './core/loop';
@@ -95,20 +100,26 @@ async function main(): Promise<void> {
   const host = document.getElementById('app');
   if (!host) throw new Error('#app element missing');
 
-  setLocale(navigator.language);
-  setTypingFieldLabel(t('a11y.typingField'));
+  // Comfort settings (REQUIREMENTS §10) and the menu language, applied before anything is drawn.
+  let settings: Settings = loadSettings();
+  const applyMenuLanguage = () => {
+    setLocale(settings.menuLanguage);
+    document.documentElement.lang = getLocale();
+    setTypingFieldLabel(t('a11y.typingField'));
+  };
+  applyMenuLanguage();
   registerOffline();
 
   /** The active player's keyboard layout (it lives in their save). */
   const layout = () => layoutById(store.data.layout);
-  const presets = () => builtInPresets(layout());
+  /** The words language's accented letters this player can type on their keyboard (core/accents.ts). */
+  const typeableAccents = () => accentedLetters(store.data.wordsLanguage).filter((ch) => howToType(ch, layout(), settings.keyboardKind));
+  const presets = () => builtInPresets(layout(), typeableAccents());
   const backend = await openBackend();
   // Each player on this browser has their own save (storage/profiles.ts).
   const players = await PlayerStore.open(backend, t('players.defaultName'));
   const store = await SaveStore.open(backend, 250, saveKeyFor(players.active.id));
 
-  // Comfort settings (REQUIREMENTS §10), applied before anything is drawn.
-  let settings: Settings = loadSettings();
   // Mac or PC keys: what Alt means, and which variant of the layout to show.
   const applyKeyboardKind = () => {
     setKeyboardPlatform(settings.keyboardKind);
@@ -129,7 +140,12 @@ async function main(): Promise<void> {
     return activeSeason(new Date());
   })();
   /** The season the game dresses up for: none when Holiday looks is off. */
-  const season = (): SeasonId | null => (settings.holidayLooks === 'on' ? calendarSeason : null);
+  const season = (): SeasonId | null => {
+    if (settings.holidayLooks !== 'on') return null;
+    // Thanksgiving is an American holiday: its looks follow an English menu (REQUIREMENTS §13d).
+    if (calendarSeason === 'thanksgiving' && settings.menuLanguage !== 'en') return null;
+    return calendarSeason;
+  };
   const applyColors = () => {
     setTheme(settings.theme);
     document.documentElement.dataset.theme = settings.theme;
@@ -186,11 +202,22 @@ async function main(): Promise<void> {
    */
   let pack: ContentPack | null = null;
   let packLoading: Promise<ContentPack> | null = null;
-  const packReady = (): Promise<ContentPack> =>
-    (packLoading ??= loadEnglishPack().then((loaded) => {
-      pack = loaded;
-      return loaded;
-    }));
+  /** Word -> tier, for picking a downloaded article's words (built on first use, per words language). */
+  let vocabDictionary: Dictionary | null = null;
+  /** The words language of the pack loaded or loading; the player's can change in Settings. */
+  let packLanguage: Language | null = null;
+  const packReady = (): Promise<ContentPack> => {
+    const lang = store.data.wordsLanguage;
+    if (packLanguage !== lang || !packLoading) {
+      packLanguage = lang;
+      pack = null;
+      packLoading = loadPack(lang).then((loaded) => {
+        if (packLanguage === lang) pack = loaded;
+        return loaded;
+      });
+    }
+    return packLoading;
+  };
   /**
    * Run `action` now if the words are in, or as soon as they arrive. Only
    * the first request made while waiting runs, so pressing Enter twice can't
@@ -217,8 +244,21 @@ async function main(): Promise<void> {
       });
     };
   /** Until the pack arrives: no words (content made now is replaced before any page starts). */
-  const noWords: ContentPack = { locale: 'en', words: [], blocklist: new Blocklist([]) };
+  const noWords: ContentPack = { locale: 'en', words: [], blocklist: new Blocklist([]), holidays: {} };
   const words = (): ContentPack => pack ?? noWords;
+
+  /**
+   * How to type an accented letter, as the note on a creature after a miss
+   * ("ê : ^ → E"). On Windows with a US keyboard, a plain accent key or
+   * letter arriving instead suggests US-International is off.
+   */
+  const accentNote = (char: string, key: string): string | null => {
+    const steps = howToType(char, layout(), settings.keyboardKind);
+    if (!steps) return null;
+    const note = t('accent.note', { char, steps: steps.map(stepText).join(' → ') });
+    const noDeadKey = accentMethod(layout(), settings.keyboardKind) === 'usInternational' && (steps[0]?.makes === key || ["'", '`', '^', '"', '~'].includes(key) || key === plainLetter(char));
+    return noDeadKey ? `${note}\n${t('accent.usIntlOff')}` : note;
+  };
 
   // Fonts first: canvas text is rasterised once, in whatever font is ready.
   await loadFonts();
@@ -233,6 +273,7 @@ async function main(): Promise<void> {
       reducedMotion: reducedMotion(settings, prefersReducedMotion()),
       screenEffects: settings.screenEffects,
       pageWriting: settings.pageWriting === 'on',
+      accentNote,
       cosmetics: store.data.profile.cosmetics,
       season: season(),
     })),
@@ -271,6 +312,11 @@ async function main(): Promise<void> {
         }
         if (w.phase === 'gameOver') {
           return newBest ? [t('overlay.gameOver.newBest', { difficulty: difficultyLabel(w.difficulty) })] : [];
+        }
+        if (w.phase === 'notebookComplete' && w.mode === 'accents') {
+          const lines = [t('overlay.accents.stars', { earned: accentRunStars.reduce((a, b) => a + b, 0), max: 3 * GAME_CONFIG.accents.plan.length })];
+          if (reward.ink > 0) lines.push(t('overlay.inkEarned', { ink: reward.ink }));
+          return lines;
         }
         if (w.phase === 'notebookComplete') {
           const { earned, max } = totalStars(store.data.apprentice.stars);
@@ -323,15 +369,19 @@ async function main(): Promise<void> {
       blocklist,
       trustedWords: true,
       keyWeights: weights,
+      pressCost: pressCostFor(layout(), settings.keyboardKind),
+      forgiving: store.data.accents.forgiving,
+      // "Letters + accents": words lean towards ones with an accent.
+      accentBias: matchingPreset(presets(), keys)?.id === LETTERS_ACCENTS ? GAME_CONFIG.accents.practiceWeight : 1,
       // Downloaded words are checked again, in case the filter changed since they were fetched.
       topicWords: store.data.vocab
-        .filter((list) => list.enabled)
+        .filter((list) => list.enabled && list.lang === store.data.wordsLanguage)
         .flatMap((list) => list.words)
         .filter((word) => !blocklist.blocksWord(word)),
       // Holiday words in season (never on the Daily Page, which is the same for everyone).
       seasonWords: (() => {
         const dressed = season();
-        return dressed ? HOLIDAY_WORDS[dressed] : [];
+        return dressed ? (words().holidays[dressed] ?? []) : [];
       })(),
       seasonShare: GAME_CONFIG.seasons.wordShare,
     });
@@ -343,10 +393,11 @@ async function main(): Promise<void> {
    */
   const dailyContent = () =>
     createContentSource({
-      keys: dailyKeys(layout()),
+      keys: dailyKeys(layout(), store.data.wordsLanguage),
       words: words().words,
       blocklist: words().blocklist,
       trustedWords: true,
+      pressCost: pressCostFor(layout(), settings.keyboardKind),
     });
 
   const game = createWorld({
@@ -383,18 +434,57 @@ async function main(): Promise<void> {
     game.laneStep = game.targetScale > 1 ? 2 : 1;
   };
   applyLayout();
+  game.forgivingAccents = store.data.accents.forgiving;
   const loop = new FixedStepLoop((stepMs) => stepWorld(game, stepMs));
 
   /** Re-read keys and difficulty from the save (after an import or erase). */
   const applySave = () => {
     game.layout = layout();
+    game.forgivingAccents = store.data.accents.forgiving;
     setContent(game, contentFor(store.data.keys));
+    // Another player (or an imported save) may type in another language: fetch its words.
+    if (packLanguage !== null && packLanguage !== store.data.wordsLanguage) {
+      vocabDictionary = null;
+      void packReady().then(() => setContent(game, contentFor(store.data.keys)));
+    }
     game.selectedDifficulty = store.data.difficulty;
     refreshAbilities();
     refreshTips();
     // An imported save may already have earned stickers.
     giveStickers({}, false);
     menu.refresh();
+  };
+
+  /**
+   * The first time accented letters come up outside the accent chapters
+   * (Free Write, the Daily Page, Fair Copy), show how to type the ones not
+   * yet taught, then go on. Skipped with Forgiving accents or tips off.
+   */
+  const briefAccents = (chars: Iterable<string>, then: () => void) => {
+    const seen = new Set(store.data.accents.seen);
+    const fresh = [...new Set(chars)].filter((ch) => isAccented(ch) && !seen.has(ch) && howToType(ch, layout(), settings.keyboardKind));
+    if (fresh.length === 0 || store.data.accents.forgiving || !store.data.tutorials.enabled || dialogOpen) {
+      then();
+      return;
+    }
+    // Teaching order, so the card reads like the accent chapters.
+    const order = ACCENT_CHAPTERS[store.data.wordsLanguage].flat();
+    fresh.sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
+    dialogOpen = true;
+    openAccentIntro(document.body, {
+      title: t('accents.newTitle'),
+      intro: t('accents.newIntro'),
+      startLabel: t('accents.play'),
+      letters: fresh.map((char) => ({ char, steps: howToType(char, layout(), settings.keyboardKind) })),
+      onHelp: () => openAccentHelpDialog(),
+      onClose: (start) => {
+        dialogOpen = false;
+        store.update((save) => {
+          save.accents.seen = [...new Set([...save.accents.seen, ...fresh])];
+        });
+        if (start) then();
+      },
+    });
   };
 
   /** Enter on an in-game card (next page, or retry after game over), or Start on the menu. */
@@ -411,11 +501,51 @@ async function main(): Promise<void> {
     }
     if (game.phase === 'ready') {
       // A Practice notebook uses the player's own keys, with fresh weak-key weights.
-      setContent(game, contentFor(store.data.keys));
-      startPractice(game);
+      briefAccents(store.data.keys, () => {
+        setContent(game, contentFor(store.data.keys));
+        startPractice(game);
+        loop.reset();
+      });
+      return;
     } else {
       confirm(game);
     }
+    loop.reset();
+  });
+
+  /** Stars of each page of the accent chapter being played. */
+  let accentRunStars: number[] = [];
+
+  /**
+   * An accent chapter's content: every letter of the course and the accents
+   * taught up to and including this chapter, its new letters coming up most.
+   */
+  const accentContent = (chapter: number) => {
+    const chapters = ACCENT_CHAPTERS[store.data.wordsLanguage];
+    const fresh = chapters[chapter] ?? [];
+    const keys = [...apprenticeKeys(layout(), APPRENTICE_CHAPTERS - 1), ...chapters.slice(0, chapter + 1).flat()];
+    const weights = keyWeights(store.data.keyStats, keys);
+    for (const key of fresh) weights[key] = (weights[key] ?? 1) * GAME_CONFIG.accents.newLetterWeight;
+    return createContentSource({
+      keys,
+      words: words().words,
+      blocklist: words().blocklist,
+      trustedWords: true,
+      keyWeights: weights,
+      pressCost: pressCostFor(layout(), settings.keyboardKind),
+      accentBias: GAME_CONFIG.accents.chapterWordBias,
+    });
+  };
+
+  const startAccentChapter = withWords((chapter: number) => {
+    if (dialogOpen || game.phase !== 'ready') return;
+    const letters = ACCENT_CHAPTERS[store.data.wordsLanguage][chapter] ?? [];
+    store.update((save) => {
+      save.accents.seen = [...new Set([...save.accents.seen, ...letters])];
+    });
+    accentRunStars = [];
+    setContent(game, accentContent(chapter));
+    startAccents(game, chapter, letters);
     loop.reset();
   });
 
@@ -431,20 +561,23 @@ async function main(): Promise<void> {
    */
   const playDaily = withWords((challenge: Challenge | null = null) => {
     if (dialogOpen || game.phase !== 'ready') return;
-    const today = dailyId(new Date());
-    const id = challenge?.daily ?? today;
-    const counted = id === today && store.data.daily.results[id] === undefined;
-    setContent(game, dailyContent());
-    startDaily(
-      game,
-      id,
-      dailySeed(id, challenge?.layout ?? store.data.layout),
-      counted,
-      challenge ? { score: challenge.score, name: challenge.name } : null,
-    );
-    dailyGrades = [];
-    dailyOutcome = null;
-    loop.reset();
+    const content = dailyContent();
+    briefAccents(content.keys, () => {
+      const today = dailyId(new Date());
+      const id = challenge?.daily ?? today;
+      const counted = id === today && store.data.daily.results[id] === undefined;
+      setContent(game, content);
+      startDaily(
+        game,
+        id,
+        dailySeed(id, challenge?.layout ?? store.data.layout, store.data.wordsLanguage),
+        counted,
+        challenge ? { score: challenge.score, name: challenge.name } : null,
+      );
+      dailyGrades = [];
+      dailyOutcome = null;
+      loop.reset();
+    });
   });
 
   /** Record the Daily Page's result, if this was the day's counted go. */
@@ -464,6 +597,7 @@ async function main(): Promise<void> {
         wpm: Math.round(wpm(game.stats)),
         accuracy: Math.round(accuracy(game.stats) * 100),
         finished,
+        ...(game.forgivingAccents ? { forgiving: true as const } : {}),
       });
       dailyOutcome = recorded
         ? { newBest: game.stats.score > previousBest && game.stats.score > 0, best: save.daily.best, streak: save.daily.streak }
@@ -488,13 +622,14 @@ async function main(): Promise<void> {
       pages: dailyPages(result.grades)
         .map((p) => t('daily.sharePage', { page: p.page, square: MARK_SQUARES[p.mark], grade: p.grade ?? t('daily.notReached') }))
         .join(' · '),
-      streak: streak > 1 ? t('daily.shareStreak', { streak }) : '',
+      streak: (streak > 1 ? t('daily.shareStreak', { streak }) : '') + (result.forgiving ? t('daily.shareForgiving') : ''),
       url: challengeLink({
         daily: id,
         layout: store.data.layout,
         score: result.score,
         grades: result.grades,
         name: signDaily ? cleanChallengeName(players.active.name) : null,
+        words: store.data.wordsLanguage,
       }),
     });
   };
@@ -602,6 +737,8 @@ async function main(): Promise<void> {
       keyStats: store.data.keyStats,
       countWords: (keys) => countTypeableWords(words().words, keys),
       minWords: MIN_WORD_POOL,
+      accents: typeableAccents(),
+      onAccentHelp: () => openAccentHelpDialog(),
       onDone: (keys) => {
         dialogOpen = false;
         setContent(game, contentFor(keys));
@@ -652,10 +789,51 @@ async function main(): Promise<void> {
     const from = layout();
     const to = layoutById(id);
     store.update((save) => {
-      save.keys = remapSelection(from, to, save.keys, save.apprentice.unlocked);
+      save.keys = remapSelection(from, to, save.keys, save.apprentice.unlocked, typeableAccents());
       save.layout = id;
     });
     applySave();
+  };
+
+  /** Switch the player's words language; the new words start on the next page. */
+  const setWordsLanguage = (lang: Language) => {
+    if (lang === store.data.wordsLanguage) return;
+    store.update((save) => {
+      save.wordsLanguage = lang;
+    });
+    applySave();
+  };
+
+  /** The accent help card, for the player's words language, layout and computer. */
+  const openAccentHelpDialog = () => {
+    const wasOpen = dialogOpen;
+    dialogOpen = true;
+    openAccentHelp(document.body, {
+      lang: store.data.wordsLanguage,
+      layout: layout(),
+      platform: settings.keyboardKind,
+      onClose: () => {
+        dialogOpen = wasOpen;
+      },
+    });
+  };
+
+  /** The card that opens an accent chapter; Enter starts it, Esc goes back to Contents. */
+  const openAccentChapterIntro = (chapter: number) => {
+    if (dialogOpen) return;
+    const letters = ACCENT_CHAPTERS[store.data.wordsLanguage][chapter] ?? [];
+    dialogOpen = true;
+    openAccentIntro(document.body, {
+      title: t('contents.accentChapter', { chapter: chapter + 1 }),
+      intro: t('accents.chapterIntro'),
+      startLabel: t('accents.start'),
+      letters: letters.map((char) => ({ char, steps: howToType(char, layout(), settings.keyboardKind) })),
+      onHelp: () => openAccentHelpDialog(),
+      onClose: (start) => {
+        dialogOpen = false;
+        if (start) startAccentChapter(chapter);
+      },
+    });
   };
 
   const openSettingsDialog = () => {
@@ -666,9 +844,15 @@ async function main(): Promise<void> {
       onChange: (next) => {
         const redraw = next.theme !== settings.theme || next.textSize !== settings.textSize || next.motion !== settings.motion || next.screenEffects !== settings.screenEffects || next.pageWriting !== settings.pageWriting || next.holidayLooks !== settings.holidayLooks;
         const kindChanged = next.keyboardKind !== settings.keyboardKind;
+        const languageChanged = next.menuLanguage !== settings.menuLanguage;
         settings = next;
         saveSettings(settings);
         if (kindChanged) applyKeyboardKind();
+        if (languageChanged) {
+          applyMenuLanguage();
+          menu.refresh();
+          renderer.rebuild();
+        }
         applyColors();
         applyLayout();
         if (redraw) renderer.rebuild();
@@ -703,14 +887,27 @@ async function main(): Promise<void> {
       },
       // Switching layout mid-page would change the keys under the player.
       layout: game.phase === 'ready' ? { current: store.data.layout, onPick: (id) => setLayout(id) } : undefined,
+      wordsLanguage: game.phase === 'ready' ? { current: store.data.wordsLanguage, onPick: (lang) => setWordsLanguage(lang) } : undefined,
+      reopen: () => openSettingsDialog(),
+      forgiving:
+        accentedLetters(store.data.wordsLanguage).length > 0
+          ? {
+              enabled: store.data.accents.forgiving,
+              onToggle: (enabled) => {
+                store.update((save) => {
+                  save.accents.forgiving = enabled;
+                });
+                game.forgivingAccents = enabled;
+                if (game.phase === 'ready') setContent(game, contentFor(store.data.keys));
+              },
+            }
+          : undefined,
       onClose: () => {
         dialogOpen = false;
       },
     });
   };
 
-  /** Word -> tier, for picking a downloaded article's words (built on first use). */
-  let vocabDictionary: Dictionary | null = null;
   const openVocab = withWords(() => {
     if (dialogOpen || game.phase !== 'ready') return;
     vocabDictionary ??= new Map(words().words.map((entry) => [entry.word, entry.tier]));
@@ -719,6 +916,7 @@ async function main(): Promise<void> {
     const refresh = () => setContent(game, contentFor(store.data.keys));
     openWordLists(document.body, {
       lists: store.data.vocab,
+      lang: store.data.wordsLanguage,
       dictionary: vocabDictionary,
       blocklist: words().blocklist,
       countFitting: (words) =>
@@ -855,12 +1053,15 @@ async function main(): Promise<void> {
 
   const goToMenu = () => {
     const wasDaily = game.mode === 'daily';
+    const wasAccents = game.mode === 'accents';
     // Leaving the day's Daily Page part way still uses up its one go.
     if (wasDaily) finishDaily(false);
     quitToMenu(game);
     loop.reset();
     void store.flush();
     if (wasDaily && game.challenge === null) menu.show('daily');
+    // After an accent chapter, back to the Contents page, where the next one may have opened.
+    if (wasAccents) menu.show('contents');
     game.challenge = null;
   };
 
@@ -878,12 +1079,19 @@ async function main(): Promise<void> {
   /** Fair Copy, the typing-speed test, while it's open (it owns the keyboard then). */
   let fairCopy: FairCopySession | null = null;
   /** Deals Fair Copy's passages, shuffled: every one before any comes round again. */
-  const passageDeck = new PassageDeck(Math.random);
+  /** A deck of passages per words language, so each deals every passage before repeating. */
+  const passageDecks = new Map<Language, PassageDeck>();
+  const passageDeck = () => {
+    const lang = store.data.wordsLanguage;
+    let deck = passageDecks.get(lang);
+    if (!deck) passageDecks.set(lang, (deck = new PassageDeck(Math.random, PASSAGES.filter((p) => p.lang === lang))));
+    return deck;
+  };
   const startFairCopy = (seconds: number | null, first?: Passage) => {
     fairCopy?.destroy();
     fairCopy = new FairCopySession(renderer.app, {
       mode: seconds,
-      deck: passageDeck,
+      deck: passageDeck(),
       first,
       reducedMotion: reducedMotion(settings, prefersReducedMotion()),
       cosmetics: store.data.profile.cosmetics,
@@ -897,7 +1105,7 @@ async function main(): Promise<void> {
       onFinished: (r, mode, passageId) => {
         let record: { previous: number | null; isNew: boolean } = { previous: null, isNew: false };
         store.update((save) => {
-          const { previous, isNew } = recordFairCopy(save, mode, r, new Date(), passageId);
+          const { previous, isNew } = recordFairCopy(save, mode, r, new Date(), passageId, save.wordsLanguage);
           record = { previous: previous?.wpm ?? null, isNew };
         });
         giveStickers({ fairCopy: { seconds: mode, netWpm: r.netWpm, typed: r.typed, errors: r.errors, mistakesLeft: r.mistakesLeft } });
@@ -945,6 +1153,20 @@ async function main(): Promise<void> {
         })(),
       })),
     onStartApprentice: (chapter) => after(() => startChapter(chapter)),
+    accentChapters: () => {
+      const lang = store.data.wordsLanguage;
+      const stars = store.data.apprentice.accentStars[lang] ?? [];
+      // They open once every letter is learned (in development, `?accents=open` opens them).
+      const open = store.data.apprentice.completed || (import.meta.env.DEV && new URLSearchParams(location.search).get('accents') === 'open');
+      return ACCENT_CHAPTERS[lang].map((letters, chapter) => ({
+        chapter,
+        letters: letters.join(' '),
+        stars: { earned: stars[chapter] ?? 0, max: 3 * GAME_CONFIG.accents.plan.length },
+        locked: !open || (chapter > 0 && !(stars[chapter - 1] ?? 0)),
+      }));
+    },
+    onStartAccents: (chapter) => openAccentChapterIntro(chapter),
+    onAccentHelp: () => openAccentHelpDialog(),
     rankLine: () => {
       const { level, into, needed } = levelProgress(store.data.profile.ink);
       return t('menu.rank', { rank: t(`rank.${rankForLevel(level)}` as MessageKey), level, into, needed });
@@ -1033,9 +1255,14 @@ async function main(): Promise<void> {
       return result ? t('menu.dailyDone', { id, score: formatNumber(result.score) }) : t('menu.dailyNew', { id });
     },
     onPlayDaily: () => after(() => playDaily()),
-    onFairCopy: (seconds) => startFairCopy(seconds),
+    // The passages' accented letters get their briefing first, if they haven't been taught.
+    onFairCopy: (seconds) =>
+      briefAccents(
+        PASSAGES.filter((p) => p.lang === store.data.wordsLanguage).flatMap((p) => [...p.text]),
+        () => startFairCopy(seconds),
+      ),
     fairCopyBest: (seconds) => {
-      const best = store.data.fairCopy.best[fairCopyKey(seconds)];
+      const best = store.data.fairCopy.best[fairCopyKey(seconds, store.data.wordsLanguage)];
       return best ? t('fairCopyMenu.best', { wpm: formatNumber(Math.round(best.wpm)) }) : null;
     },
     dailySigned: () => signDaily,
@@ -1055,6 +1282,8 @@ async function main(): Promise<void> {
         counts: c.daily === today && store.data.daily.results[today] === undefined,
         daysAgo: today - c.daily,
         otherLayout: c.layout === store.data.layout ? null : t(`layout.${c.layout}` as MessageKey),
+        otherWords: c.words === store.data.wordsLanguage ? null : LANGUAGE_NAMES[c.words],
+        myWords: LANGUAGE_NAMES[store.data.wordsLanguage],
         myLayout: t(`layout.${store.data.layout}` as MessageKey),
       };
     },
@@ -1360,7 +1589,7 @@ async function main(): Promise<void> {
         if (lastPhase !== 'paused') recentStickers = [];
         // A suggestion that never got its moment doesn't carry over to a later page.
         if (lastPhase !== 'paused') pendingNudge = null;
-        if (lastPhase !== 'paused' && game.mode !== 'daily') {
+        if (lastPhase !== 'paused' && game.mode !== 'daily' && game.mode !== 'accents') {
           if (lastPhase === 'ready') newBest = false;
           store.update((save) => {
             save.difficulty = game.difficulty;
@@ -1383,6 +1612,13 @@ async function main(): Promise<void> {
             // The Daily Page keeps its own records (finishDaily), not the notebook's.
             dailyGrades.push(pageGrade(game.pageStats, game.page.params.size));
             reward = earnInk(save, inkForPage(game.pageStats.score));
+            return;
+          }
+          if (game.mode === 'accents') {
+            // Accent chapters keep their stars per words language (recorded when the chapter ends).
+            const earned = starsForGrade(pageGrade(game.pageStats, game.page.params.size));
+            accentRunStars[game.page.index] = earned;
+            reward = earnInk(save, inkForPage(game.pageStats.score, earned));
             return;
           }
           const score = game.pageStats.score;
@@ -1430,6 +1666,18 @@ async function main(): Promise<void> {
           finishDaily(true);
           break;
         }
+        if (game.mode === 'accents') {
+          store.update((save) => {
+            const lang = save.wordsLanguage;
+            const stars = [...(save.apprentice.accentStars[lang] ?? [])];
+            const total = accentRunStars.reduce((a, b) => a + b, 0);
+            stars[game.page.chapter] = Math.max(stars[game.page.chapter] ?? 0, total);
+            for (let i = 0; i < stars.length; i++) stars[i] ??= 0;
+            save.apprentice.accentStars[lang] = stars;
+            reward = earnInk(save, 0);
+          });
+          break;
+        }
         store.update((save) => {
           save.notebook = null;
           reward = earnInk(save, NOTEBOOK_BONUS);
@@ -1438,9 +1686,9 @@ async function main(): Promise<void> {
         showUnlocks();
         break;
       case 'gameOver':
-        if (game.mode === 'daily') {
+        if (game.mode === 'daily' || game.mode === 'accents') {
           store.update((save) => mergeKeyStats(save, game.pageStats));
-          finishDaily(false);
+          if (game.mode === 'daily') finishDaily(false);
           break;
         }
         store.update((save) => {

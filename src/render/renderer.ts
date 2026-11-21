@@ -8,6 +8,7 @@
 // PixiJS's browser setup, bundled with the game (M29). PixiJS would
 // otherwise fetch it on its own during start-up, after the fonts, adding a
 // round trip before the menu can show.
+import { charAt } from '../core/text';
 import 'pixi.js/browser';
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import {
@@ -84,6 +85,11 @@ export interface DisplayOptions {
   pageWriting?: boolean;
   /** The holiday season to dress up for (core/seasons.ts), or none. */
   season?: SeasonId | null;
+  /**
+   * How to type an accented letter on the player's keyboard, as a short note
+   * ("ê: ^ → E"), shown on a creature after a miss on it. `key` is what was pressed.
+   */
+  accentNote?: (char: string, key: string) => string | null;
 }
 
 const GOLD = 0xc9a227;
@@ -307,7 +313,7 @@ export async function createRenderer(
   let callout!: Container;
   let calloutText!: Text;
   let calloutArrow!: Graphics;
-  let calloutId: MechanicId | null = null;
+  let calloutId: string | null = null;
   let season: SeasonId | null = null;
   let decor!: SeasonDecor;
 
@@ -774,7 +780,8 @@ export async function createRenderer(
       manuscriptBossDone = false;
       manuscript.reset(hashSeed(key), MANUSCRIPT_BASELINES);
       const heading = { chapter: chapter + 1, chapters: APPRENTICE_CHAPTERS, page: index + 1 };
-      scribe.start(t(world.mode === 'apprentice' ? 'manuscript.headingApprentice' : 'manuscript.heading', heading), reducedMotion);
+      const headingKey = world.mode === 'apprentice' ? 'manuscript.headingApprentice' : world.mode === 'accents' ? 'manuscript.headingAccents' : 'manuscript.heading';
+      scribe.start(t(headingKey, heading), reducedMotion);
     }
     const bossShare = hasBoss ? GAME_CONFIG.manuscript.bossShare : 0;
     const share = params.size > 0 ? Math.min(1, manuscriptCleared / params.size) : 0;
@@ -1111,13 +1118,18 @@ export async function createRenderer(
       glowWash.alpha = approach(glowWash.alpha, playing && world.highlightMs > 0 ? 0.28 : 0, 8, frameMs);
 
       // A note in red pen follows the creature being taught, with an arrow down to it.
-      const guided = playing && world.guide ? world.targets.find((g) => g.id === world.guide?.targetId) : undefined;
+      // After a miss on an accented letter, the same note shows that creature how to type it.
+      const hint = world.accentHint;
+      const hinted = playing && !world.guide && hint ? world.targets.find((g) => g.id === hint.targetId) : undefined;
+      const hintNote = hinted && hint && charAt(hinted.text, hinted.typed) === hint.char ? display().accentNote?.(hint.char, hint.key) : null;
+      const guided = playing && world.guide ? world.targets.find((g) => g.id === world.guide?.targetId) : hintNote ? hinted : undefined;
       const guidedView = guided && views.get(guided.id);
       callout.visible = Boolean(guided && guidedView);
-      if (guided && guidedView && world.guide) {
-        if (calloutId !== world.guide.id) {
-          calloutId = world.guide.id;
-          calloutText.text = t(`tutorial.${calloutId}.hint` as MessageKey);
+      const noteId = world.guide ? world.guide.id : hintNote ? `accent:${hintNote}` : null;
+      if (guided && guidedView && noteId) {
+        if (calloutId !== noteId) {
+          calloutId = noteId;
+          calloutText.text = world.guide ? t(`tutorial.${world.guide.id}.hint` as MessageKey) : (hintNote ?? '');
         }
         // The note sits above the creature (kept on the page), with a short pen stroke
         // down to it. The arrow ends clear of eyes, horns and crowns, and its head

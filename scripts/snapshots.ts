@@ -212,6 +212,48 @@ const SHOW_HOLIDAY_SHELF = `(() => {
   return 'ok';
 })()`;
 
+/**
+ * French (M33): French menus and words on AZERTY, with the letter course
+ * finished and the first three accent chapters done, so the Contents page's
+ * Accents part is open. Saved, so it survives the reload that changes the menu language.
+ */
+const FRENCH = `(() => {
+  const store = window.inkling && window.inkling.store;
+  if (!store || !('wordsLanguage' in store.data)) return 'no languages';
+  store.update((save) => {
+    save.wordsLanguage = 'fr';
+    save.layout = 'fr-azerty';
+    save.apprentice.unlocked = 27;
+    save.apprentice.completed = true;
+    save.apprentice.accentStars = { fr: [9, 8, 9] };
+  });
+  const settings = JSON.parse(localStorage.getItem('inkling.settings') || '{}');
+  localStorage.setItem('inkling.settings', JSON.stringify({ ...settings, menuLanguage: 'fr' }));
+  return store.flush().then(() => 'ok');
+})()`;
+
+/** Back to English menus and words on US QWERTY, for the rest of the tour. */
+const ENGLISH = `(() => {
+  const store = window.inkling && window.inkling.store;
+  if (!store || !('wordsLanguage' in store.data)) return 'no languages';
+  store.update((save) => {
+    save.wordsLanguage = 'en';
+    save.layout = 'us-qwerty';
+    save.apprentice.unlocked = 1;
+    save.apprentice.completed = false;
+    save.apprentice.accentStars = {};
+  });
+  const settings = JSON.parse(localStorage.getItem('inkling.settings') || '{}');
+  localStorage.setItem('inkling.settings', JSON.stringify({ ...settings, menuLanguage: 'en' }));
+  return store.flush().then(() => 'ok');
+})()`;
+
+/** Scrolls the Contents page to its Accents part (M33). */
+const SHOW_ACCENTS = `(() => {
+  document.querySelector('.menu-accents')?.scrollIntoView({ block: 'center' });
+  return 'ok';
+})()`;
+
 /** The free-play mode's button: "Free Write" since M17, "Practice" before. */
 const FREE_WRITE = 'Free Write|Practice';
 
@@ -267,6 +309,14 @@ const MAIN_TOUR: Step[] = [
   { click: 'Settings' }, { click: 'Spanish (Spain)' }, { key: 'Escape' },
   { click: FREE_WRITE }, { click: 'Change keys' }, { shot: 'type-case-spanish' }, { key: 'Escape' }, { key: 'Escape' },
   { click: 'Settings' }, { click: 'US QWERTY' }, { key: 'Escape' },
+  // French (M33): French menus and words on AZERTY, the Contents page's Accents part,
+  // an accent chapter's opening card, the accent help card and the Type Case's Accents strip.
+  { eval: FRENCH }, { open: '?season=none' }, { shot: 'menu-fr' },
+  { click: 'Apprenti' }, { eval: SHOW_ACCENTS }, { wait: 300 }, { shot: 'contents-accents' },
+  { click: 'â ê î ô û' }, { wait: 2600 }, { shot: 'accent-intro' }, { key: 'Escape' },
+  { click: 'Comment taper les accents' }, { wait: 400 }, { shot: 'accent-help' }, { key: 'Escape' }, { key: 'Escape' },
+  { click: 'Écriture libre' }, { click: 'Changer les touches' }, { shot: 'type-case-accents' }, { key: 'Escape' }, { key: 'Escape' },
+  { eval: ENGLISH }, { open: '?season=none' },
   { click: 'How to play' }, { eval: SCROLL_TOP }, { shot: 'how-to-play' },
   { eval: SHOW_BOSSES }, { wait: 300 }, { shot: 'how-to-play-bosses' }, { key: 'Escape' },
   // The Daily Page (M20), with a sample streak.
@@ -327,7 +377,11 @@ const SOCIAL_TOUR: Step[] = [
 ];
 
 /** The website's plain pages (M27): a path, not a query, so `open` doesn't wait for the game. */
-const SITE_TOUR: Step[] = [{ open: 'parents-and-teachers/' }, { shot: 'site-parents' }, { open: 'how-to-play/' }, { shot: 'site-how-to-play' }];
+const SITE_TOUR: Step[] = [
+  { open: 'parents-and-teachers/' }, { shot: 'site-parents' }, { open: 'how-to-play/' }, { shot: 'site-how-to-play' },
+  // French pages (M33), with the accent help page.
+  { open: 'fr/accents/' }, { shot: 'site-fr-accents' },
+];
 
 const TOUR: Step[] =
   mode === 'holidays' ? HOLIDAY_TOUR : mode === 'social' ? SOCIAL_TOUR : [...MAIN_TOUR, ...HOLIDAY_TOUR, ...SITE_TOUR];

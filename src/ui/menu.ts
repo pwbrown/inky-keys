@@ -58,6 +58,16 @@ export interface ChapterEntry {
   best: string | null;
 }
 
+/** One chapter of the Contents page's "Accents" part. */
+export interface AccentChapterEntry {
+  /** 0-based. */
+  chapter: number;
+  /** e.g. "â ê î ô û". */
+  letters: string;
+  stars: { earned: number; max: number };
+  locked: boolean;
+}
+
 /** One sticker in the book. */
 export interface StickerEntry {
   id: string;
@@ -90,6 +100,9 @@ export interface ChallengeView {
   daysAgo: number;
   /** The layout it was played on, if not the player's. */
   otherLayout: string | null;
+  /** The words language it was played in, when it isn't the player's (its own name), else null. */
+  otherWords: string | null;
+  myWords: string;
   myLayout: string;
 }
 
@@ -141,6 +154,11 @@ export interface MenuHooks {
   /** Every Apprentice chapter, for the Contents page. */
   chapters(): ChapterEntry[];
   onStartApprentice(chapter: number): void;
+  /** The accent chapters of the player's words language (none for English), for the Contents page's second part. */
+  accentChapters(): AccentChapterEntry[];
+  onStartAccents(chapter: number): void;
+  /** Open the accent help card. */
+  onAccentHelp(): void;
   /** e.g. "Scribe · Level 5 · 120 of 600 ink to the next level". */
   rankLine(): string;
   /** Ink progress through the current level, 0..1. */
@@ -446,26 +464,26 @@ export class Menu {
         ],
       ),
       h('nav', { className: 'menu-tiles', 'aria-label': t('menu.nav') }, [
-        cont ? this.tile('continue', 'full', t('menu.continue'), () => this.hooks.onContinue(), { detail: cont, key: 'c', primary: true }) : null,
+        cont ? this.tile('continue', 'full', t('menu.continue'), () => this.hooks.onContinue(), { detail: cont, key: t('menu.key.continue'), primary: true }) : null,
         this.tile('practice', 'half', t('menu.practice'), () => this.show('newNotebook'), {
           icon: 'freeWrite',
           detail: this.hooks.keysSummary(),
-          key: 'f',
+          key: t('menu.key.freeWrite'),
           primary: !cont,
         }),
-        this.tile('daily', 'half', t('menu.daily'), () => this.show('daily'), { detail: this.hooks.dailyDetail(), key: 't' }),
+        this.tile('daily', 'half', t('menu.daily'), () => this.show('daily'), { detail: this.hooks.dailyDetail(), key: t('menu.key.daily') }),
         this.tile('apprentice', 'half', t('menu.apprentice'), () => this.show('contents'), {
           detail: this.hooks.apprenticeDetail(),
-          key: 'a',
+          key: t('menu.key.apprentice'),
         }),
-        this.tile('fairCopy', 'half', t('menu.fairCopy'), () => this.show('fairCopy'), { detail: t('menu.fairCopyDetail'), key: 'o' }),
-        this.tile('desk', 'half', t('menu.desk'), () => this.show('desk'), { key: 'd' }),
-        this.tile('stickers', 'half', t('menu.stickers'), () => this.show('stickers'), { detail: this.hooks.stickerDetail(), key: 'k' }),
-        this.tile('words', 'third', t('menu.wordLists'), () => this.hooks.onWordLists(), { key: 'w' }),
-        this.tile('how', 'third', t('menu.howToPlay'), () => this.show('howToPlay'), { key: 'h' }),
-        this.tile('settings', 'third', t('menu.settings'), () => this.hooks.onSettings(), { key: 's' }),
-        this.tile('saves', 'small', t('menu.saveData'), () => this.hooks.onSaveData(), { key: 'b' }),
-        this.tile('about', 'small', t('menu.about'), () => this.show('about'), { key: 'i' }),
+        this.tile('fairCopy', 'half', t('menu.fairCopy'), () => this.show('fairCopy'), { detail: t('menu.fairCopyDetail'), key: t('menu.key.fairCopy') }),
+        this.tile('desk', 'half', t('menu.desk'), () => this.show('desk'), { key: t('menu.key.desk') }),
+        this.tile('stickers', 'half', t('menu.stickers'), () => this.show('stickers'), { detail: this.hooks.stickerDetail(), key: t('menu.key.stickers') }),
+        this.tile('words', 'third', t('menu.wordLists'), () => this.hooks.onWordLists(), { key: t('menu.key.wordLists') }),
+        this.tile('how', 'third', t('menu.howToPlay'), () => this.show('howToPlay'), { key: t('menu.key.howToPlay') }),
+        this.tile('settings', 'third', t('menu.settings'), () => this.hooks.onSettings(), { key: t('menu.key.settings') }),
+        this.tile('saves', 'small', t('menu.saveData'), () => this.hooks.onSaveData(), { key: t('menu.key.saveData') }),
+        this.tile('about', 'small', t('menu.about'), () => this.show('about'), { key: t('menu.key.about') }),
       ]),
       h('p', { className: 'menu-best' }, [this.hooks.rankLine(), best ? h('br') : null, best]),
     ];
@@ -605,10 +623,53 @@ export class Menu {
           ]),
         ),
       ),
+      ...[this.accentsPart()].filter((part): part is HTMLElement => part !== null),
       h('div', { className: 'tc-actions' }, [
         h('button', { type: 'button', className: 'tc-secondary', 'data-id': 'back', onClick: () => this.show('title') }, [t('menu.back')]),
       ]),
     ];
+  }
+
+  /** The Contents page's second part: accent chapters, for a words language that has accents. */
+  private accentsPart(): HTMLElement | null {
+    const chapters = this.hooks.accentChapters();
+    if (chapters.length === 0) return null;
+    return h('section', { className: 'menu-accents', 'aria-labelledby': 'menu-accents-title' }, [
+      h('h3', { id: 'menu-accents-title', className: 'menu-part-title' }, [t('contents.accentsTitle')]),
+      h('p', { className: 'tc-intro' }, [
+        chapters[0]!.locked ? t('contents.accentsLocked') : t('contents.accentsIntro'),
+        ' ',
+        h('button', { type: 'button', className: 'menu-link', 'data-id': 'accent-help', onClick: () => this.hooks.onAccentHelp() }, [
+          t('contents.accentsHelp'),
+        ]),
+      ]),
+      h(
+        'ol',
+        { className: 'menu-chapters menu-accent-chapters' },
+        chapters.map((c) =>
+          h('li', {}, [
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'menu-btn menu-chapter',
+                'data-id': `accents-${c.chapter}`,
+                disabled: c.locked,
+                'aria-label': c.locked
+                  ? t('contents.accentLockedLabel', { chapter: c.chapter + 1 })
+                  : t('contents.accentChapterLabel', { chapter: c.chapter + 1, letters: c.letters, earned: c.stars.earned, max: c.stars.max }),
+                onClick: () => this.hooks.onStartAccents(c.chapter),
+              },
+              [
+                h('span', { className: 'menu-label menu-accent-letters' }, [c.letters]),
+                h('span', { className: 'menu-detail' }, [c.locked ? t('contents.locked') : t('contents.accentChapter', { chapter: c.chapter + 1 })]),
+                h('span', { className: 'menu-stars', 'aria-hidden': 'true' }, [c.locked ? '🔒' : `★ ${c.stars.earned}/${c.stars.max}`]),
+              ],
+            ),
+          ]),
+        ),
+      ),
+    ]);
   }
 
   private newNotebook(): HTMLElement[] {
@@ -715,7 +776,7 @@ export class Menu {
         h('dl', { className: 'how-controls' }, [
           control(['↑'], 'how.power.paperweight'),
           control(['↓'], 'how.power.highlighter'),
-          control(['Enter'], 'how.power.blotter'),
+          control([t('keycap.enter')], 'how.power.blotter'),
           control([], 'how.power.eraser'),
           control([], 'how.power.paper'),
         ]),
@@ -725,9 +786,9 @@ export class Menu {
         'how.controlsTitle',
         h('dl', { className: 'how-controls' }, [
           control([t('how.control.typeKey')], 'how.control.type'),
-          control(['Tab'], 'how.control.tab'),
-          control(['Backspace'], 'how.control.backspace'),
-          control(['Esc'], 'how.control.esc'),
+          control([t('keycap.tab')], 'how.control.tab'),
+          control([t('keycap.backspace')], 'how.control.backspace'),
+          control([t('keycap.esc')], 'how.control.esc'),
           control(['R', 'M'], 'how.control.card'),
         ]),
       ),
@@ -742,13 +803,13 @@ export class Menu {
       h('h2', { id: 'menu-title' }, [t('pause.title')]),
       h('p', { className: 'tc-intro' }, [this.hooks.pauseSummary()]),
       h('nav', { className: 'menu-list' }, [
-        this.button('resume', t('pause.resume'), () => this.hooks.onResume(), { key: 'Esc', primary: true }),
-        this.hooks.canRestart() ? this.button('restart', t('pause.restart'), () => this.hooks.onRestart(), { key: 'r' }) : null,
+        this.button('resume', t('pause.resume'), () => this.hooks.onResume(), { key: t('keycap.esc'), primary: true }),
+        this.hooks.canRestart() ? this.button('restart', t('pause.restart'), () => this.hooks.onRestart(), { key: t('menu.key.restart') }) : null,
         this.hooks.canPracticeChapterKeys()
-          ? this.button('practice', t('pause.practice'), () => this.hooks.onPracticeChapterKeys(), { detail: t('pause.practiceDetail'), key: 'f' })
+          ? this.button('practice', t('pause.practice'), () => this.hooks.onPracticeChapterKeys(), { detail: t('pause.practiceDetail'), key: t('menu.key.practice') })
           : null,
-        this.button('settings', t('menu.settings'), () => this.hooks.onSettings(), { key: 's' }),
-        this.button('quit', t('pause.quit'), () => this.hooks.onQuit(), { key: 'q' }),
+        this.button('settings', t('menu.settings'), () => this.hooks.onSettings(), { key: t('menu.key.pauseSettings') }),
+        this.button('quit', t('pause.quit'), () => this.hooks.onQuit(), { key: t('menu.key.quit') }),
       ]),
       h('p', { className: 'menu-best' }, [t('pause.note')]),
     ];
@@ -794,10 +855,11 @@ export class Menu {
       c.pages.length > 0 ? this.pageTiles(c.pages) : null,
       h('p', { className: 'tc-intro' }, [when]),
       c.otherLayout ? h('p', { className: 'tc-intro' }, [t('challenge.otherLayout', { theirs: c.otherLayout, mine: c.myLayout })]) : null,
+      c.otherWords ? h('p', { className: 'tc-intro' }, [t('challenge.otherWords', { theirs: c.otherWords, mine: c.myWords })]) : null,
       h('nav', { className: 'menu-list' }, [
         this.button('take', t('challenge.take'), () => this.hooks.onTakeChallenge(), {
           detail: t('challenge.takeDetail', { pages: DAILY_PAGES }),
-          key: 'p',
+          key: t('menu.key.takeChallenge'),
           primary: true,
         }),
       ]),
@@ -954,7 +1016,7 @@ export class Menu {
       h('nav', { className: 'menu-list' }, [
         this.button('fair-passage', t('fairCopyMenu.passage'), () => this.hooks.onFairCopy(null), {
           detail: this.fairCopyDetail(t('fairCopyMenu.passageDetail'), null),
-          key: 'p',
+          key: t('menu.key.fairCopyPassage'),
           primary: true,
           autofocus: true,
         }),
@@ -1001,11 +1063,11 @@ export class Menu {
       share ? this.signToggle() : null,
       h('nav', { className: 'menu-list' }, [
         d.played
-          ? this.button('copy', t('daily.copy'), () => void copy(), { key: 'c', primary: true, autofocus: true })
+          ? this.button('copy', t('daily.copy'), () => void copy(), { key: t('menu.key.copyDaily'), primary: true, autofocus: true })
           : null,
         this.button('play-daily', d.played ? t('daily.playAgain') : t('daily.play'), () => this.hooks.onPlayDaily(), {
           detail: d.played ? t('daily.playAgainDetail') : t('daily.playDetail', { pages: DAILY_PAGES }),
-          key: 'p',
+          key: t('menu.key.playDaily'),
           primary: !d.played,
           autofocus: !d.played,
         }),
@@ -1230,7 +1292,7 @@ export class Menu {
         ]),
       ]);
     };
-    const news = this.tile('whats-new', 'third', t('about.whatsNew'), () => this.hooks.onWhatsNew(), { icon: 'stickers', key: 'n' });
+    const news = this.tile('whats-new', 'third', t('about.whatsNew'), () => this.hooks.onWhatsNew(), { icon: 'stickers', key: t('menu.key.whatsNew') });
     return [
       h('h2', { id: 'menu-title' }, [t('about.title')]),
       h('p', { className: 'menu-version' }, [t('about.version', { version: this.hooks.appVersion() })]),

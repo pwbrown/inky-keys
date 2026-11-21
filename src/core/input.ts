@@ -14,6 +14,8 @@ import { applyEdit, correctPrefix, isTextEdit, type EditAction } from './editing
 import { canStart, onBossPartDone } from './bosses';
 import { applyBriefings } from './mechanics';
 import { createStats, earnPoints, type Stats } from './stats';
+import { charAt, charCount } from './text';
+import { isAccented, plainLetter } from './accents';
 import {
   REVEALED_X,
   WORLD_WIDTH,
@@ -65,7 +67,9 @@ function registerError(world: World, key: string, target: Target | undefined, ex
   // Which character the player *should* have typed: given by the caller, or
   // the locked target's next character, or the most urgent target's.
   const intended = target ?? mostUrgent(visibleTargets(world));
-  const expected = expectedChar === undefined ? intended?.text[intended.typed] : (expectedChar ?? undefined);
+  const expected = expectedChar === undefined ? (intended ? charAt(intended.text, intended.typed) : undefined) : (expectedChar ?? undefined);
+  // A miss on an accented letter: that creature shows the keys for it.
+  if (intended && expected !== undefined && isAccented(expected)) world.accentHint = { targetId: intended.id, char: expected, key };
 
   // An armed Eraser rubs the slip out: no cost, and the run carries on. The
   // key is still noted, so practice keeps focusing on it.
@@ -83,7 +87,7 @@ function registerError(world: World, key: string, target: Target | undefined, ex
   // What it costs (GAME_CONFIG.mistakes): points, and later on a little ink.
   const m = GAME_CONFIG.mistakes;
   const pointsLost = Math.min(world.stats.score, m.points);
-  const inkCost = mistakeInk(world.difficulty, world.page.chapter, world.mode === 'apprentice');
+  const inkCost = mistakeInk(world.difficulty, world.page.chapter, world.mode === 'apprentice' || world.mode === 'accents');
   const inkLost = Math.max(0, Math.min(inkCost, world.ink - m.minInk));
   world.ink -= inkLost;
   world.cleanRun = 0;
@@ -228,12 +232,28 @@ function lock(world: World, target: Target): void {
   world.events.push({ type: 'locked', targetId: target.id });
 }
 
+/**
+ * The character a key stands for, given what's expected next: with
+ * Forgiving accents on, a plain letter counts for its accented one (e for é).
+ */
+function forgiven(world: World, key: string, expected: string | undefined): string {
+  return world.forgivingAccents && expected !== undefined && expected !== key && plainLetter(expected) === key ? expected : key;
+}
+
+/** The character a Run-on expects next, if everything typed so far is right. */
+function bufferExpects(target: Target): string | undefined {
+  const before = target.buffer ?? '';
+  const prefix = correctPrefix(before, target.text);
+  return prefix === [...before].length ? charAt(target.text, prefix) : undefined;
+}
+
 /** Can this keystroke start on a target that isn't locked yet? */
 function startsWith(world: World, target: Target, key: string): boolean {
   // Ghost text can't be typed before it shows, and some boss parts must wait their turn.
   if (!isRevealed(target) || !canStart(world, target)) return false;
-  if (target.kind === 'runon') return target.buffer === '' && target.text[0] === key;
-  return target.text[target.typed] === key;
+  const first = charAt(target.text, target.kind === 'runon' ? 0 : target.typed);
+  if (target.kind === 'runon') return target.buffer === '' && forgiven(world, key, first) === first;
+  return forgiven(world, key, first) === first;
 }
 
 /**
@@ -322,11 +342,12 @@ export function typeChar(world: World, key: string): void {
   }
 
   if (isBufferKind(target.kind)) {
-    editBuffer(world, target, { type: 'insert', char: key });
+    editBuffer(world, target, { type: 'insert', char: forgiven(world, key, bufferExpects(target)) });
     return;
   }
 
-  if (target.text[target.typed] !== key) {
+  key = forgiven(world, key, charAt(target.text, target.typed));
+  if (charAt(target.text, target.typed) !== key) {
     registerError(world, key, target);
     return;
   }
@@ -334,7 +355,7 @@ export function typeChar(world: World, key: string): void {
   target.typed++;
   registerHit(world, key);
 
-  if (target.typed < target.text.length) {
+  if (target.typed < charCount(target.text)) {
     world.events.push({ type: 'progress', targetId: target.id, shot: true });
     return;
   }
@@ -393,7 +414,7 @@ function turnPage(world: World): void {
 
 /** True when the page just cleared was the last page of the last Apprentice chapter. */
 export function finishedNotebook(world: World): boolean {
-  if (world.mode === 'daily') return isLastPageOfChapter(world.page);
+  if (world.mode === 'daily' || world.mode === 'accents') return isLastPageOfChapter(world.page);
   return (
     world.mode === 'apprentice' && isLastPageOfChapter(world.page) && world.page.chapter >= APPRENTICE_CHAPTERS - 1
   );
@@ -411,6 +432,21 @@ export function startApprentice(world: World, chapter: number, difficulty: Diffi
   world.page = createPage(difficulty, ch, 0, world.content, 'apprentice');
   markPageStart(world);
   setPhase(world, 'intro');
+}
+
+/**
+ * Start an accent chapter (the Contents page's "Accents" part): a short
+ * notebook of GAME_CONFIG.accents.plan pages. Its card has already been
+ * shown (ui/accentIntro.ts), and its content (every letter of the course
+ * plus the accents learned so far) must already be set.
+ */
+export function startAccents(world: World, chapter: number, letters: readonly string[], difficulty: Difficulty = world.selectedDifficulty): void {
+  resetWorld(world, difficulty);
+  world.mode = 'accents';
+  world.accentLetters = [...letters];
+  world.page = createPage(difficulty, chapter, 0, world.content, 'accents');
+  markPageStart(world);
+  beginPage(world);
 }
 
 /** Start an endless Practice notebook with the player's own keys. */

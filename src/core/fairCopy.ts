@@ -10,11 +10,14 @@
  * A timed test strings passages together; Enter moves on to the next one.
  */
 import { GAME_CONFIG } from './config';
+import type { Language } from './languages';
 import { applyEdit } from './editing';
 import { accuracy, wpm } from './stats';
 
 export interface Passage {
   id: string;
+  /** The words language it's in: passages are dealt from the player's (REQUIREMENTS §13d). */
+  lang: Language;
   title: string;
   author: string;
   text: string;
@@ -24,6 +27,7 @@ export interface Passage {
 export const PASSAGES: readonly Passage[] = [
   {
     id: 'austen-pride',
+    lang: 'en',
     title: 'Pride and Prejudice',
     author: 'Jane Austen',
     text:
@@ -33,6 +37,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'dickens-two-cities',
+    lang: 'en',
     title: 'A Tale of Two Cities',
     author: 'Charles Dickens',
     text:
@@ -42,6 +47,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'twain-huck',
+    lang: 'en',
     title: 'Adventures of Huckleberry Finn',
     author: 'Mark Twain',
     text:
@@ -50,6 +56,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'melville-moby',
+    lang: 'en',
     title: 'Moby-Dick',
     author: 'Herman Melville',
     text:
@@ -59,6 +66,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'tolstoy-anna',
+    lang: 'en',
     title: 'Anna Karenina',
     author: 'Leo Tolstoy',
     text:
@@ -68,6 +76,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'carroll-alice',
+    lang: 'en',
     title: "Alice's Adventures in Wonderland",
     author: 'Lewis Carroll',
     text:
@@ -77,6 +86,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'bronte-jane',
+    lang: 'en',
     title: 'Jane Eyre',
     author: 'Charlotte Bronte',
     text:
@@ -86,6 +96,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'fitzgerald-gatsby',
+    lang: 'en',
     title: 'The Great Gatsby',
     author: 'F. Scott Fitzgerald',
     text:
@@ -95,6 +106,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'barrie-peter',
+    lang: 'en',
     title: 'Peter Pan',
     author: 'J. M. Barrie',
     text:
@@ -103,6 +115,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'baum-oz',
+    lang: 'en',
     title: 'The Wonderful Wizard of Oz',
     author: 'L. Frank Baum',
     text:
@@ -111,6 +124,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'dickens-carol',
+    lang: 'en',
     title: 'A Christmas Carol',
     author: 'Charles Dickens',
     text:
@@ -119,6 +133,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'shelley-frankenstein',
+    lang: 'en',
     title: 'Frankenstein',
     author: 'Mary Shelley',
     text:
@@ -128,6 +143,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'doyle-bohemia',
+    lang: 'en',
     title: 'A Scandal in Bohemia',
     author: 'Arthur Conan Doyle',
     text:
@@ -136,6 +152,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'alcott-little-women',
+    lang: 'en',
     title: 'Little Women',
     author: 'Louisa May Alcott',
     text:
@@ -145,6 +162,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'burnett-secret-garden',
+    lang: 'en',
     title: 'The Secret Garden',
     author: 'Frances Hodgson Burnett',
     text:
@@ -153,6 +171,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'grahame-willows',
+    lang: 'en',
     title: 'The Wind in the Willows',
     author: 'Kenneth Grahame',
     text:
@@ -162,6 +181,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'london-call',
+    lang: 'en',
     title: 'The Call of the Wild',
     author: 'Jack London',
     text:
@@ -170,6 +190,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'wilde-dorian',
+    lang: 'en',
     title: 'The Picture of Dorian Gray',
     author: 'Oscar Wilde',
     text:
@@ -178,6 +199,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'dickens-expectations',
+    lang: 'en',
     title: 'Great Expectations',
     author: 'Charles Dickens',
     text:
@@ -186,6 +208,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'austen-emma',
+    lang: 'en',
     title: 'Emma',
     author: 'Jane Austen',
     text:
@@ -194,6 +217,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'sewell-black-beauty',
+    lang: 'en',
     title: 'Black Beauty',
     author: 'Anna Sewell',
     text:
@@ -202,6 +226,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'kipling-jungle',
+    lang: 'en',
     title: 'The Jungle Book',
     author: 'Rudyard Kipling',
     text:
@@ -210,6 +235,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'wells-time-machine',
+    lang: 'en',
     title: 'The Time Machine',
     author: 'H. G. Wells',
     text:
@@ -218,6 +244,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'conrad-heart',
+    lang: 'en',
     title: 'Heart of Darkness',
     author: 'Joseph Conrad',
     text:
@@ -226,6 +253,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'nesbit-railway',
+    lang: 'en',
     title: 'The Railway Children',
     author: 'E. Nesbit',
     text:
@@ -234,6 +262,7 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'burnett-little-princess',
+    lang: 'en',
     title: 'A Little Princess',
     author: 'Frances Hodgson Burnett',
     text:
@@ -243,12 +272,111 @@ export const PASSAGES: readonly Passage[] = [
   },
   {
     id: 'woolf-dalloway',
+    lang: 'en',
     title: 'Mrs Dalloway',
     author: 'Virginia Woolf',
     text:
       'Mrs. Dalloway said she would buy the flowers herself. For Lucy had her work cut out for her. ' +
       "The doors would be taken off their hinges; Rumpelmayer's men were coming. " +
       'And then, thought Clarissa Dalloway, what a morning, fresh as if issued to children on a beach.',
+  },
+
+  // French: public-domain texts in the original, with their accents and plain
+  // punctuation (straight quotes, no guillemets, an ordinary space before ; : ! ?).
+  // Drafted for a native speaker to check against the editions.
+  {
+    id: 'verne-tour-du-monde',
+    lang: 'fr',
+    title: 'Le Tour du monde en quatre-vingts jours',
+    author: 'Jules Verne',
+    text:
+      "En l'année 1872, la maison portant le numéro 7 de Saville-row, Burlington Gardens, était habitée par Phileas Fogg, " +
+      "l'un des membres les plus singuliers et les plus remarqués du Reform-Club de Londres, " +
+      "bien qu'il semblât prendre à tâche de ne rien faire qui pût attirer l'attention.",
+  },
+  {
+    id: 'verne-vingt-mille-lieues',
+    lang: 'fr',
+    title: 'Vingt mille lieues sous les mers',
+    author: 'Jules Verne',
+    text:
+      "L'année 1866 fut marquée par un événement bizarre, un phénomène inexpliqué et inexplicable que personne n'a sans doute oublié. " +
+      "Sans parler des rumeurs qui agitaient les populations des ports et surexcitaient l'esprit public à l'intérieur des continents, " +
+      'les gens de mer furent particulièrement émus.',
+  },
+  {
+    id: 'hugo-miserables',
+    lang: 'fr',
+    title: 'Les Misérables',
+    author: 'Victor Hugo',
+    text:
+      "En 1815, M. Charles-François-Bienvenu Myriel était évêque de Digne. C'était un vieillard d'environ soixante-quinze ans ; " +
+      "il occupait le siège de Digne depuis 1806. Quoique ce détail ne touche en aucune manière au fond même de ce que nous avons à raconter, " +
+      "il n'est peut-être pas inutile, ne fût-ce que pour être exact en tout, d'indiquer ici les bruits et les propos qui avaient couru sur son compte au moment où il était arrivé dans le diocèse.",
+  },
+  {
+    id: 'dumas-mousquetaires',
+    lang: 'fr',
+    title: 'Les Trois Mousquetaires',
+    author: 'Alexandre Dumas',
+    text:
+      "Le premier lundi du mois d'avril 1625, le bourg de Meung, où naquit l'auteur du Roman de la Rose, " +
+      'semblait être dans une révolution aussi entière que si les huguenots en fussent venus faire une seconde Rochelle.',
+  },
+  {
+    id: 'perrault-chaperon',
+    lang: 'fr',
+    title: 'Le Petit Chaperon rouge',
+    author: 'Charles Perrault',
+    text:
+      "Il était une fois une petite fille de village, la plus jolie qu'on eût su voir ; sa mère en était folle, et sa mère-grand plus folle encore. " +
+      "Cette bonne femme lui fit faire un petit chaperon rouge, qui lui seyait si bien, que partout on l'appelait le petit Chaperon rouge.",
+  },
+  {
+    id: 'perrault-cendrillon',
+    lang: 'fr',
+    title: 'Cendrillon',
+    author: 'Charles Perrault',
+    text:
+      "Il était une fois un gentilhomme qui épousa en secondes noces une femme, la plus hautaine et la plus fière qu'on eût jamais vue. " +
+      'Elle avait deux filles de son humeur, et qui lui ressemblaient en toutes choses.',
+  },
+  {
+    id: 'lafontaine-cigale',
+    lang: 'fr',
+    title: 'La Cigale et la Fourmi',
+    author: 'Jean de La Fontaine',
+    text:
+      'La Cigale, ayant chanté tout l\'été, se trouva fort dépourvue quand la bise fut venue : pas un seul petit morceau de mouche ou de vermisseau. ' +
+      'Elle alla crier famine chez la Fourmi sa voisine, la priant de lui prêter quelque grain pour subsister jusqu\'à la saison nouvelle.',
+  },
+  {
+    id: 'lafontaine-corbeau',
+    lang: 'fr',
+    title: 'Le Corbeau et le Renard',
+    author: 'Jean de La Fontaine',
+    text:
+      'Maître Corbeau, sur un arbre perché, tenait en son bec un fromage. Maître Renard, par l\'odeur alléché, lui tint à peu près ce langage : ' +
+      "Hé ! bonjour, Monsieur du Corbeau. Que vous êtes joli ! que vous me semblez beau !",
+  },
+  {
+    id: 'malot-sans-famille',
+    lang: 'fr',
+    title: 'Sans famille',
+    author: 'Hector Malot',
+    text:
+      "Je suis un enfant trouvé. Mais, jusqu'à huit ans, j'ai cru que, comme tous les autres enfants, j'avais une mère, " +
+      "car, lorsque je pleurais, il y avait une femme qui me serrait si doucement dans ses bras en me berçant, que mes larmes s'arrêtaient de couler.",
+  },
+  {
+    id: 'verne-ile-mysterieuse',
+    lang: 'fr',
+    title: "L'Île mystérieuse",
+    author: 'Jules Verne',
+    text:
+      'Remontons-nous ? Non ! Au contraire ! Nous descendons ! Pis que cela, monsieur Cyrus ! Nous tombons ! ' +
+      "Pour Dieu ! Jetez du lest ! Voilà le dernier sac vidé ! Le ballon se relève-t-il ? Non ! J'entends comme un clapotis de vagues ! " +
+      'La mer est sous la nacelle !',
   },
 ];
 

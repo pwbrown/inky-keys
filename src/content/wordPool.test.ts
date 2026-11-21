@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildWordPool, entriesFromTiers, pickWord, typeableWith } from './wordPool';
+import { buildWordPool, entriesFromTiers, pickWord, typeableWith, wordDifficulty } from './wordPool';
 
 const entries = entriesFromTiers(['as ask flask', 'dad glass', 'flasks zebra']);
 
@@ -33,5 +33,13 @@ describe('word pool', () => {
     const easy = pickWord(pool, 0, () => 0.5)!;
     const hard = pickWord(pool, 1, () => 0.5)!;
     expect(easy.length).toBeLessThan(hard.length);
+  });
+});
+
+describe('word difficulty in key presses', () => {
+  it('ranks a word with a two-press accent as harder than the same length without', () => {
+    const cost = (ch: string) => (ch === 'ê' ? 1 : 0);
+    expect(wordDifficulty({ word: 'fête', tier: 0 }, 0, cost)).toBeGreaterThan(wordDifficulty({ word: 'fete', tier: 0 }, 0, cost));
+    expect(wordDifficulty({ word: 'été', tier: 0 }, 0)).toBe(wordDifficulty({ word: 'ete', tier: 0 }, 0));
   });
 });

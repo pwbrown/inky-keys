@@ -161,3 +161,48 @@ describe('holiday words', () => {
   });
 });
 
+
+describe('accents in content', () => {
+  const french = entriesFromTiers(['été fête tête les des ses mes tes fée thé dé et le se te de']);
+  const keys = ['e', 't', 'l', 's', 'd', 'm', 'h', 'f'];
+
+  it('only offers accented words once the accented letters are selected', () => {
+    const plain = createContentSource({ keys, words: french });
+    const random = mulberry32(1);
+    for (let i = 0; i < 40; i++) expect(plain.nextWord(0.5, random)).not.toMatch(/[éê]/);
+    const withAccents = createContentSource({ keys: [...keys, 'é', 'ê'], words: french });
+    expect(withAccents.wordCount).toBe(french.length);
+  });
+
+  it('with Forgiving accents, a plain letter lets its accented words in', () => {
+    const forgiving = createContentSource({ keys, words: french, forgiving: true });
+    expect(forgiving.wordCount).toBe(french.length);
+  });
+
+  it('never makes an accented capital the keys can’t type', () => {
+    expect(styleWord('été', new Set(['é', 't', 'E', 'e']), () => 0)).toBe('été');
+    expect(styleWord('été', new Set(['t', 'É']), () => 1)).toBe('ÉtÉ');
+  });
+
+  it('counts extra key presses with the player’s press cost', () => {
+    const cost = (ch: string) => (ch === 'ê' ? 1 : 0);
+    const content = createContentSource({ keys: [...keys, 'ê'], words: french, pressCost: cost });
+    expect(content.extraPresses('fête')).toBe(1);
+    expect(content.extraPresses('tête tête')).toBe(2);
+    expect(createContentSource({ keys, words: french }).extraPresses('fête')).toBe(0);
+  });
+
+  it('leans towards accented words with an accent bias', () => {
+    const made = [...'tdlsm'].flatMap((a) => [...'tdlsm'].flatMap((b) => ['e', 'é'].map((v) => a + v + b)));
+    const many = entriesFromTiers([made.join(' ')]);
+    const k = ['t', 'e', 'd', 'l', 's', 'm', 'é', 'ê'];
+    const count = (bias: number) => {
+      const c = createContentSource({ keys: k, words: many, accentBias: bias });
+      const r = mulberry32(3);
+      let n = 0;
+      for (let i = 0; i < 300; i++) if (/[éê]/.test(c.nextWord(0.5, r))) n++;
+      return n;
+    };
+    expect(count(3)).toBeGreaterThan(count(1));
+  });
+});

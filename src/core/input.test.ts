@@ -3,6 +3,8 @@ import { GAME_CONFIG } from './config';
 import {
   autoPause,
   confirm,
+  finishedNotebook,
+  startAccents,
   moveSelection,
   multiplier,
   quitToMenu,
@@ -290,5 +292,84 @@ describe('restart, retry and quit', () => {
     restartPage(world);
     retryChapter(world);
     expect(world.phase).toBe('ready');
+  });
+});
+
+describe('accented letters', () => {
+  it('matches accented letters as single characters, even outside the BMP', () => {
+    const world = playingWorld();
+    const target = addTarget(world, 'été', 600, 0);
+    for (const ch of 'été') typeChar(world, ch);
+    expect(world.targets.includes(target)).toBe(false);
+    expect(world.stats.errors).toBe(0);
+  });
+
+  it('counts a plain letter for an accented one as a mistake by default', () => {
+    const world = playingWorld();
+    addTarget(world, 'fête', 600, 0);
+    typeChar(world, 'f');
+    typeChar(world, 'e');
+    expect(world.stats.errors).toBe(1);
+  });
+
+  it('a dead key then the wrong letter is a miss', () => {
+    const world = playingWorld();
+    addTarget(world, 'fête', 600, 0);
+    typeChar(world, 'f');
+    // ^ then a gives â, which isn't ê.
+    typeChar(world, 'â');
+    expect(world.stats.errors).toBe(1);
+  });
+
+  it('with Forgiving accents, e counts for ê, and the word keeps its accent', () => {
+    const world = playingWorld();
+    world.forgivingAccents = true;
+    const target = addTarget(world, 'fête', 600, 0);
+    for (const ch of 'fete') typeChar(world, ch);
+    expect(world.targets.includes(target)).toBe(false);
+    expect(target.text).toBe('fête');
+    expect(world.stats.errors).toBe(0);
+  });
+
+  it('with Forgiving accents, a plain letter can lock onto a word starting with an accent', () => {
+    const world = playingWorld();
+    world.forgivingAccents = true;
+    const target = addTarget(world, 'été', 600, 0);
+    typeChar(world, 'e');
+    expect(world.lockedId).toBe(target.id);
+    expect(target.typed).toBe(1);
+  });
+});
+
+describe('accent chapters', () => {
+  it('are a short notebook with no boss that finishes after its last page', () => {
+    const world = createWorld({ random: () => 0.5, keys: ['a', 'b', 'é'] });
+    startAccents(world, 2, ['ç'], 'normal');
+    expect(world.mode).toBe('accents');
+    expect(world.phase).not.toBe('intro');
+    expect(world.page.pageCount).toBe(GAME_CONFIG.accents.plan.length);
+    expect(world.page.chapter).toBe(2);
+    for (let i = 0; i < world.page.pageCount; i++) {
+      expect(createPage('normal', 2, i, world.content, 'accents').hasBoss).toBe(false);
+    }
+    world.page = createPage('normal', 2, world.page.pageCount - 1, world.content, 'accents');
+    expect(finishedNotebook(world)).toBe(true);
+  });
+});
+
+describe('accent hint', () => {
+  it('a miss on an accented letter marks that creature to show its keys', () => {
+    const world = playingWorld();
+    const target = addTarget(world, 'fête', 600, 0);
+    typeChar(world, 'f');
+    typeChar(world, 'e');
+    expect(world.accentHint).toEqual({ targetId: target.id, char: 'ê', key: 'e' });
+  });
+
+  it('a miss on a plain letter doesn’t', () => {
+    const world = playingWorld();
+    addTarget(world, 'fête', 600, 0);
+    typeChar(world, 'g');
+    expect(world.accentHint).toBeNull();
   });
 });

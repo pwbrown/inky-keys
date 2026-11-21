@@ -9,6 +9,8 @@ import { APPRENTICE_CHAPTERS, apprenticeKeys } from './campaign';
 import { GAME_CONFIG } from './config';
 import type { Grade } from './grade';
 import { hashSeed } from './rng';
+import { ACCENT_CHAPTERS } from './accents';
+import type { Language } from './languages';
 
 const DAY_MS = 86_400_000;
 
@@ -19,14 +21,22 @@ export function dailyId(now: Date): number {
   return Math.round((today - Date.UTC(year, month - 1, day)) / DAY_MS) + 1;
 }
 
-/** The seed for a Daily Page: the same for everyone on the same layout. */
-export function dailySeed(id: number, layoutId: string): number {
-  return hashSeed(`daily:${id}:${layoutId}`);
+/**
+ * The seed for a Daily Page: the same for everyone on the same layout and
+ * words language. English seeds are as they always were.
+ */
+export function dailySeed(id: number, layoutId: string, lang: Language = 'en'): number {
+  return hashSeed(lang === 'en' ? `daily:${id}:${layoutId}` : `daily:${id}:${layoutId}:${lang}`);
 }
 
-/** The Daily Page uses every key the Apprentice course teaches on the layout. */
-export function dailyKeys(layout: KeyboardLayout): string[] {
-  return apprenticeKeys(layout, APPRENTICE_CHAPTERS - 1);
+/**
+ * The Daily Page uses every key the Apprentice course teaches on the layout,
+ * plus the words language's common accents (the first four accent chapters:
+ * not ë ï ü).
+ */
+export function dailyKeys(layout: KeyboardLayout, lang: Language = 'en'): string[] {
+  const common = ACCENT_CHAPTERS[lang].slice(0, GAME_CONFIG.daily.accentChapters).flat();
+  return [...apprenticeKeys(layout, APPRENTICE_CHAPTERS - 1), ...common];
 }
 
 /** How many pages a Daily Page has. */

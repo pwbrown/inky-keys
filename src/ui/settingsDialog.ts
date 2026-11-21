@@ -6,6 +6,7 @@ import type { LayoutId } from '../content/layouts/types';
 import { THEMES } from '../render/theme';
 import { HOLIDAY_LOOKS, KEYBOARD_KINDS, MOTION_SETTINGS, PAGE_WRITING, SCREEN_EFFECTS, TEXT_SIZES, type Settings } from '../settings';
 import { h, trapFocus } from './dom';
+import { LANGUAGES, LANGUAGE_NAMES, type Language } from '../core/languages';
 
 export interface SettingsDialogOptions {
   settings: Settings;
@@ -14,10 +15,16 @@ export interface SettingsDialogOptions {
   onTestSound(): void;
   /** Tutorial tips for the current player (they live in the save, not in Settings). */
   tips?: { enabled: boolean; onToggle(enabled: boolean): void; onReset(): void };
+  /** Forgiving accents for this player (in their save); left out for a words language without accents. */
+  forgiving?: { enabled: boolean; onToggle(enabled: boolean): void };
   /** "Ready for more?" suggestions for this player (core/nudges.ts). */
   nudges?: { enabled: boolean; onToggle(enabled: boolean): void };
   /** The current player's keyboard layout (also in their save); left out while a page is in play. */
   layout?: { current: LayoutId; onPick(id: LayoutId): void };
+  /** The current player's words language (in their save); left out while a page is in play. */
+  wordsLanguage?: { current: Language; onPick(lang: Language): void };
+  /** Open the dialog again, so a new menu language shows straight away. */
+  reopen?(): void;
   onClose(): void;
 }
 
@@ -76,6 +83,18 @@ function tipsGroup(tips: SettingsDialogOptions['tips']): HTMLElement | null {
   ]);
 }
 
+/** Forgiving accents (per player): a plain letter counts for its accented one. */
+function forgivingGroup(forgiving: SettingsDialogOptions['forgiving']): HTMLElement | null {
+  if (!forgiving) return null;
+  const on = h('input', { type: 'checkbox', onChange: () => forgiving.onToggle(on.checked) });
+  on.checked = forgiving.enabled;
+  return h('fieldset', { className: 'st-group' }, [
+    h('legend', {}, [t('settings.forgiving')]),
+    h('div', { className: 'st-options' }, [h('label', { className: 'st-option' }, [on, h('span', {}, [t('settings.forgiving.show')])])]),
+    h('p', { className: 'st-help' }, [t('settings.forgiving.help')]),
+  ]);
+}
+
 function nudgesGroup(nudges: SettingsDialogOptions['nudges']): HTMLElement | null {
   if (!nudges) return null;
   const on = h('input', { type: 'checkbox', onChange: () => nudges.onToggle(on.checked) });
@@ -110,6 +129,18 @@ export function openSettings(host: HTMLElement, options: SettingsDialogOptions):
 
   const panel = h('div', { className: 'tc-panel st-panel' }, [
     h('header', {}, [h('h2', { id: 'st-title' }, [t('settings.title')])]),
+    radioGroup(
+      t('settings.menuLanguage'),
+      t('settings.menuLanguage.help'),
+      LANGUAGES,
+      settings.menuLanguage,
+      (v) => LANGUAGE_NAMES[v],
+      (menuLanguage) => {
+        change({ menuLanguage });
+        close();
+        options.reopen?.();
+      },
+    ),
     radioGroup(
       t('settings.textSize'),
       t('settings.textSize.help'),
@@ -176,7 +207,18 @@ export function openSettings(host: HTMLElement, options: SettingsDialogOptions):
           (id) => options.layout?.onPick(id),
         )
       : null,
+    options.wordsLanguage
+      ? radioGroup(
+          t('settings.wordsLanguage'),
+          t('settings.wordsLanguage.help'),
+          LANGUAGES,
+          options.wordsLanguage.current,
+          (v) => LANGUAGE_NAMES[v],
+          (lang) => options.wordsLanguage?.onPick(lang),
+        )
+      : null,
     tipsGroup(options.tips),
+    forgivingGroup(options.forgiving),
     nudgesGroup(options.nudges),
     h('fieldset', { className: 'st-group' }, [
       h('legend', {}, [t('settings.sound')]),

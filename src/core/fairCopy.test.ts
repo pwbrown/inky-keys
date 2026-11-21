@@ -132,7 +132,17 @@ describe('Fair Copy', () => {
   });
 
   it('has passages made only of plain, typeable characters, each with its own id', () => {
-    for (const passage of PASSAGES) expect(passage.text).toMatch(/^[\x20-\x7e]+$/);
+    // English: plain ASCII. French: plain ASCII plus the accented letters the French accent chapters teach.
+    for (const passage of PASSAGES) {
+      expect(passage.text, passage.id).toMatch(passage.lang === 'fr' ? /^[\x20-\x7eàâçéèêëîïôùûü]+$/ : /^[\x20-\x7e]+$/);
+      expect(passage.text, passage.id).toBe(passage.text.normalize('NFC'));
+    }
     expect(new Set(PASSAGES.map((p) => p.id)).size).toBe(PASSAGES.length);
+  });
+
+  it('has French passages with plain punctuation: no guillemets, no non-breaking spaces, straight quotes', () => {
+    const french = PASSAGES.filter((p) => p.lang === 'fr');
+    expect(french.length).toBeGreaterThanOrEqual(10);
+    for (const p of french) expect(p.text, p.id).not.toMatch(/[«»\u00a0\u202f’]/);
   });
 });
