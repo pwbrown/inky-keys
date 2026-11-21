@@ -142,7 +142,7 @@ describe('Fair Copy', () => {
 
   it('has French passages with plain punctuation: no guillemets, no non-breaking spaces, straight quotes', () => {
     const french = PASSAGES.filter((p) => p.lang === 'fr');
-    expect(french.length).toBeGreaterThanOrEqual(10);
+    expect(french.length).toBeGreaterThanOrEqual(20);
     for (const p of french) expect(p.text, p.id).not.toMatch(/[«»\u00a0\u202f’]/);
   });
 });

@@ -283,14 +283,15 @@ export const PASSAGES: readonly Passage[] = [
 
   // French: public-domain texts in the original, with their accents and plain
   // punctuation (straight quotes, no guillemets, an ordinary space before ; : ! ?).
-  // Drafted for a native speaker to check against the editions.
+  // Checked word for word against their editions on fr.wikisource.org (modern-spelling
+  // editions where there are several; Perrault's 1697 tales in modern spelling).
   {
     id: 'verne-tour-du-monde',
     lang: 'fr',
     title: 'Le Tour du monde en quatre-vingts jours',
     author: 'Jules Verne',
     text:
-      "En l'année 1872, la maison portant le numéro 7 de Saville-row, Burlington Gardens, était habitée par Phileas Fogg, " +
+      "En l'année 1872, la maison portant le numéro 7 de Saville-row, Burlington Gardens, maison dans laquelle Shéridan mourut en 1814, était habitée par Phileas Fogg, esq., " +
       "l'un des membres les plus singuliers et les plus remarqués du Reform-Club de Londres, " +
       "bien qu'il semblât prendre à tâche de ne rien faire qui pût attirer l'attention.",
   },
@@ -320,7 +321,7 @@ export const PASSAGES: readonly Passage[] = [
     title: 'Les Trois Mousquetaires',
     author: 'Alexandre Dumas',
     text:
-      "Le premier lundi du mois d'avril 1625, le bourg de Meung, où naquit l'auteur du Roman de la Rose, " +
+      "Le premier lundi du mois d'avril 1626, le bourg de Meung, où naquit l'auteur du Roman de la Rose, " +
       'semblait être dans une révolution aussi entière que si les huguenots en fussent venus faire une seconde Rochelle.',
   },
   {
@@ -329,7 +330,7 @@ export const PASSAGES: readonly Passage[] = [
     title: 'Le Petit Chaperon rouge',
     author: 'Charles Perrault',
     text:
-      "Il était une fois une petite fille de village, la plus jolie qu'on eût su voir ; sa mère en était folle, et sa mère-grand plus folle encore. " +
+      "Il était une fois une petite fille de village, la plus éveillée qu'on eût su voir : sa mère en était folle, et sa mère-grand plus folle encore. " +
       "Cette bonne femme lui fit faire un petit chaperon rouge, qui lui seyait si bien, que partout on l'appelait le petit Chaperon rouge.",
   },
   {
@@ -348,7 +349,7 @@ export const PASSAGES: readonly Passage[] = [
     author: 'Jean de La Fontaine',
     text:
       'La Cigale, ayant chanté tout l\'été, se trouva fort dépourvue quand la bise fut venue : pas un seul petit morceau de mouche ou de vermisseau. ' +
-      'Elle alla crier famine chez la Fourmi sa voisine, la priant de lui prêter quelque grain pour subsister jusqu\'à la saison nouvelle.',
+      'Elle alla crier famine chez la fourmi, sa voisine, la priant de lui prêter quelque grain pour subsister jusqu\'à la saison nouvelle.',
   },
   {
     id: 'lafontaine-corbeau',
@@ -356,8 +357,8 @@ export const PASSAGES: readonly Passage[] = [
     title: 'Le Corbeau et le Renard',
     author: 'Jean de La Fontaine',
     text:
-      'Maître Corbeau, sur un arbre perché, tenait en son bec un fromage. Maître Renard, par l\'odeur alléché, lui tint à peu près ce langage : ' +
-      "Hé ! bonjour, Monsieur du Corbeau. Que vous êtes joli ! que vous me semblez beau !",
+      'Maître corbeau, sur un arbre perché, tenait en son bec un fromage. Maître renard, par l\'odeur alléché, lui tint à peu près ce langage : ' +
+      "Hé ! bonjour, monsieur du corbeau. Que vous êtes joli ! que vous me semblez beau !",
   },
   {
     id: 'malot-sans-famille',
@@ -365,8 +366,8 @@ export const PASSAGES: readonly Passage[] = [
     title: 'Sans famille',
     author: 'Hector Malot',
     text:
-      "Je suis un enfant trouvé. Mais, jusqu'à huit ans, j'ai cru que, comme tous les autres enfants, j'avais une mère, " +
-      "car, lorsque je pleurais, il y avait une femme qui me serrait si doucement dans ses bras en me berçant, que mes larmes s'arrêtaient de couler.",
+      "Je suis un enfant trouvé. Mais jusqu'à huit ans, j'ai cru que, comme tous les autres enfants, j'avais une mère, " +
+      "car lorsque je pleurais, il y avait une femme qui me serrait si doucement dans ses bras, en me berçant, que mes larmes s'arrêtaient de couler.",
   },
   {
     id: 'verne-ile-mysterieuse',
@@ -375,8 +376,103 @@ export const PASSAGES: readonly Passage[] = [
     author: 'Jules Verne',
     text:
       'Remontons-nous ? Non ! Au contraire ! Nous descendons ! Pis que cela, monsieur Cyrus ! Nous tombons ! ' +
-      "Pour Dieu ! Jetez du lest ! Voilà le dernier sac vidé ! Le ballon se relève-t-il ? Non ! J'entends comme un clapotis de vagues ! " +
+      "Pour Dieu ! Jetez du lest ! Voilà le dernier sac vidé ! Le ballon se relève-t-il ? Non ! J'entends comme un clapotement de vagues ! " +
       'La mer est sous la nacelle !',
+  },
+  {
+    id: 'lafontaine-lievre',
+    lang: 'fr',
+    title: 'Le Lièvre et la Tortue',
+    author: 'Jean de La Fontaine',
+    text:
+      "Rien ne sert de courir ; il faut partir à point : le lièvre et la tortue en sont un témoignage. " +
+      "Gageons, dit celle-ci, que vous n'atteindrez point sitôt que moi ce but.",
+  },
+  {
+    id: 'lafontaine-rats',
+    lang: 'fr',
+    title: 'Le Rat de ville et le Rat des champs',
+    author: 'Jean de La Fontaine',
+    text:
+      "Autrefois le rat de ville invita le rat des champs, d'une façon fort civile, à des reliefs d'ortolans. " +
+      'Sur un tapis de Turquie le couvert se trouva mis. Je laisse à penser la vie que firent ces deux amis.',
+  },
+  {
+    id: 'lafontaine-loup-agneau',
+    lang: 'fr',
+    title: "Le Loup et l'Agneau",
+    author: 'Jean de La Fontaine',
+    text:
+      "La raison du plus fort est toujours la meilleure : nous l'allons montrer tout à l'heure. " +
+      "Un agneau se désaltérait dans le courant d'une onde pure. Un loup survint à jeun, qui cherchait aventure, " +
+      'et que la faim en ces lieux attirait.',
+  },
+  {
+    id: 'perrault-chat-botte',
+    lang: 'fr',
+    title: 'Le Maître Chat ou le Chat botté',
+    author: 'Charles Perrault',
+    text:
+      "Un meunier ne laissa pour tous biens à trois enfants qu'il avait, que son moulin, son âne et son chat. " +
+      'Les partages furent bientôt faits, ni le notaire, ni le procureur n\'y furent point appelés. ' +
+      'Ils auraient eu bientôt mangé tout le pauvre patrimoine.',
+  },
+  {
+    id: 'perrault-fees',
+    lang: 'fr',
+    title: 'Les Fées',
+    author: 'Charles Perrault',
+    text:
+      "Il était une fois une veuve qui avait deux filles : l'aînée lui ressemblait si fort d'humeur et de visage, " +
+      'que qui la voyait, voyait la mère. Elles étaient toutes deux si désagréables et si orgueilleuses, ' +
+      "qu'on ne pouvait vivre avec elles.",
+  },
+  {
+    id: 'perrault-poucet',
+    lang: 'fr',
+    title: 'Le Petit Poucet',
+    author: 'Charles Perrault',
+    text:
+      "Il était une fois un bûcheron et une bûcheronne qui avaient sept enfants, tous garçons ; " +
+      "l'aîné n'avait que dix ans, et le plus jeune n'en avait que sept.",
+  },
+  {
+    id: 'daudet-chevre',
+    lang: 'fr',
+    title: 'La Chèvre de monsieur Seguin',
+    author: 'Alphonse Daudet',
+    text:
+      "M. Seguin n'avait jamais eu de bonheur avec ses chèvres. Il les perdait toutes de la même façon : " +
+      'un beau matin, elles cassaient leur corde, s\'en allaient dans la montagne, et là-haut le loup les mangeait.',
+  },
+  {
+    id: 'daudet-moulin',
+    lang: 'fr',
+    title: 'Lettres de mon moulin',
+    author: 'Alphonse Daudet',
+    text:
+      "Ce sont les lapins qui ont été étonnés ! Depuis si longtemps qu'ils voyaient la porte du moulin fermée, " +
+      'les murs et la plate-forme envahis par les herbes, ils avaient fini par croire que la race des meuniers était éteinte, ' +
+      "et, trouvant la place bonne, ils en avaient fait quelque chose comme un quartier général, un centre d'opérations stratégiques : le moulin de Jemmapes des lapins...",
+  },
+  {
+    id: 'hugo-notre-dame',
+    lang: 'fr',
+    title: 'Notre-Dame de Paris',
+    author: 'Victor Hugo',
+    text:
+      "Il y a aujourd'hui trois cent quarante-huit ans six mois et dix-neuf jours que les parisiens s'éveillèrent " +
+      "au bruit de toutes les cloches sonnant à grande volée dans la triple enceinte de la Cité, de l'Université et de la Ville.",
+  },
+  {
+    id: 'alain-fournier-meaulnes',
+    lang: 'fr',
+    title: 'Le Grand Meaulnes',
+    author: 'Alain-Fournier',
+    text:
+      'Il arriva chez nous un dimanche de novembre 189... Je continue à dire "chez nous", ' +
+      'bien que la maison ne nous appartienne plus. Nous avons quitté le pays depuis bientôt quinze ans ' +
+      "et nous n'y reviendrons certainement jamais.",
   },
 ];
 

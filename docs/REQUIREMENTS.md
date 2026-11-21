@@ -333,7 +333,7 @@ Milestone 31 was Fair Copy (2.23.0–2.27.0). French and Spanish come in three m
 - [x] French word list: Lexique 3.83 (CC BY-SA 4.0, film and book frequencies), milestone 33. See CREDITS.md.
 - [ ] Spanish word list: which source has word frequencies and a redistributable license? CC BY-SA is acceptable. Candidates: a Hunspell dictionary plus a subtitle frequency list. Check the license before anything is added.
 - [ ] Text input: does a hidden text field (`beforeinput`/composition) behave the same in Chrome, Safari and Firefox on macOS and Windows? Spike at the start of milestone 32. Windows (AltGr, US-International) needs a Windows machine or a tester.
-- [ ] Who reviews the French and Spanish translations? Milestone 33's French (`src/i18n/fr.ts`, `site/fr/`, the Fair Copy passages, the US-International setup steps) waits for a native speaker before its release tag.
+- [ ] Who reviews the French and Spanish translations? Milestone 33's French (`src/i18n/fr.ts`, `site/fr/`, the US-International setup steps; the Fair Copy passages were checked against Wikisource) waits for a native speaker before its release tag.
 - [ ] Spanish layout: Spain ISO first, or Latin American (more common in the Americas)? Canadian French (CSA) and Swiss layouts can come later as new layout files.
 - [ ] Later layouts: QWERTZ and UK.
 - [x] Word-list source: SCOWL levels 10–50 (via `wordlist-english`) plus the LDNOOBW blocklist. See CREDITS.md.

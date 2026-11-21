@@ -454,11 +454,11 @@ Stickers arrive the moment they're earned, with a toast in the corner that doesn
 - **French words:** 56,651 words from Lexique 3.83 (CC BY-SA 4.0), with LDNOOBW's French list and a family-friendly French filter; the blocklist now folds accents. Words with œ, æ or ÿ are left out. French December words.
 - **Accent teaching:** five accent chapters (é · è à ù · ç · â ê î ô û · ë ï ü), each a three-page notebook with its letters weighted up and accented words leaning in; a just-in-time card the first time untaught accents come up in Free Write, the Daily Page or Fair Copy; after a miss on an accented letter, that creature shows its keys in red pen; the accent help card and the `/fr/accents/` page; a **Letters + accents** preset; and **Forgiving accents** (off by default), which lets e count for é.
 - **Key presses count:** word difficulty and creature pacing add the extra presses an accent takes on the player's keyboard (`howToType`, for AZERTY, Spanish ISO, and US keyboards on a Mac or with US-International).
-- **Modes follow the words language:** the Daily Page (its own seed for French, with the common accents; English seeds unchanged), challenge links (an optional `w`), Fair Copy (ten French public-domain passages; bests per language; Bookworm for every passage in any one language) and word lists (from `fr.wikipedia.org`).
+- **Modes follow the words language:** the Daily Page (its own seed for French, with the common accents; English seeds unchanged), challenge links (an optional `w`), Fair Copy (20 French public-domain passages, checked against their Wikisource editions; bests per language; Bookworm for every passage in any one language) and word lists (from `fr.wikipedia.org`).
 - **French web pages** under `/fr/` (How to play, For parents and teachers, Privacy, Accents), linked with `hreflang` and listed in the sitemap.
 - The snapshot tour has `menu-fr`, `contents-accents`, `accent-intro`, `accent-help`, `type-case-accents` and `site-fr-accents` shots.
 
-**Before release:** a native speaker reviews `fr.ts`, the French pages and the passages; Windows AltGr and US-International need a Windows tester.
+**Before release:** a native speaker reviews `fr.ts` and the French pages; Windows AltGr and US-International need a Windows tester.
 
 ## Keeping this up to date
 
