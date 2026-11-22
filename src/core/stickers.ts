@@ -148,7 +148,11 @@ export const STICKERS: readonly Sticker[] = [
     id: 'bookworm',
     group: 'fairCopy',
     emoji: '📚',
-    earned: (f) => LANGUAGES.some((lang) => PASSAGES.filter((p) => p.lang === lang).every((p) => f.passagesCopied.includes(p.id))),
+    earned: (f) =>
+      LANGUAGES.some((lang) => {
+        const passages = PASSAGES.filter((p) => p.lang === lang);
+        return passages.length > 0 && passages.every((p) => f.passagesCopied.includes(p.id));
+      }),
   },
   {
     id: 'beatTheBell',

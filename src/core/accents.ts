@@ -41,7 +41,17 @@ export type AccentMethod = 'layout' | 'macOption' | 'usInternational';
 export const ACCENT_CHAPTERS: Readonly<Record<Language, readonly (readonly string[])[]>> = {
   en: [],
   fr: [['é'], ['è', 'à', 'ù'], ['ç'], ['â', 'ê', 'î', 'ô', 'û'], ['ë', 'ï', 'ü']],
+  // Spanish ends with its opening question and exclamation marks.
+  es: [['ñ'], ['á', 'é'], ['í', 'ó', 'ú'], ['ü'], ['¿', '¡']],
 };
+
+/** Spanish opening marks: taught like accents, written before a question or exclamation. */
+export const INVERTED_MARKS: Readonly<Record<string, string>> = { '¿': '?', '¡': '!' };
+
+/** A character taught with key steps: an accented letter, or ¿ ¡. */
+export function needsKeySteps(char: string): boolean {
+  return isAccented(char) || char in INVERTED_MARKS;
+}
 
 /** Every accented letter of a language, in teaching order. */
 export function accentedLetters(lang: Language): string[] {
@@ -195,8 +205,8 @@ export function pressCostFor(layout: KeyboardLayout, platform: Platform): (ch: s
   if (!cache) costCache.set(layout, (cache = new Map()));
   const memo = cache;
   return (ch) => {
-    // Plain a–z and most symbols are one press; only letters with marks are worked out.
-    if (ch < 'À') return 0;
+    // Plain a–z and ASCII symbols are one press; ¡ ¿ and letters with marks are worked out.
+    if (ch < '¡') return 0;
     const key = platform + ch;
     let cost = memo.get(key);
     if (cost === undefined) memo.set(key, (cost = extraPresses(ch, layout, platform)));

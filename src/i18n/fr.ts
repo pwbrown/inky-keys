@@ -788,6 +788,9 @@ export const fr: Messages = {
   'daily.shareForgiving': '\n(Accents indulgents activés)',
 
   // Release notes (only 2.29.0 onwards are translated; older ones fall back to English).
+  'release.2.30.0.spanish': 'Inky Keys parle espagnol : menus et mots en espagnol, mots de Noël et textes de Copie au propre.',
+  'release.2.30.0.accents': 'Cinq chapitres d’accents espagnols enseignent ñ, á é, í ó ú, ü et les signes ¿ ¡, avec les touches pas à pas.',
+  'release.2.30.0.marks': 'Avec ¿ et ¡ choisis, questions et exclamations s’ouvrent à l’espagnole : ¿qué? ¡hola!',
   'release.2.29.0.french': 'Inky Keys parle français ! Choisis la langue des menus et des mots dans les Réglages ; tous les modes suivent.',
   'release.2.29.0.accents': 'Cinq nouveaux chapitres d’accents dans le sommaire de l’Apprenti apprennent é, è à ù, ç, â ê î ô û et ë ï ü, avec les touches montrées pas à pas.',
   'release.2.29.0.help': 'Comment taper les accents montre les touches pour un clavier AZERTY ou américain, sur Mac ou Windows. Un accent raté montre aussi ses touches.',

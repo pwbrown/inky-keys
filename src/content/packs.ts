@@ -40,6 +40,10 @@ export async function loadPack(lang: Language): Promise<ContentPack> {
     const [words, blocked, holidays] = await Promise.all([import('./fr/words.json'), import('./fr/blocklist.json'), import('./fr/holidays')]);
     return build('fr', words.default, blocked.default, holidays.HOLIDAY_WORDS);
   }
+  if (lang === 'es') {
+    const [words, blocked, holidays] = await Promise.all([import('./es/words.json'), import('./es/blocklist.json'), import('./es/holidays')]);
+    return build('es', words.default, blocked.default, holidays.HOLIDAY_WORDS);
+  }
   const [words, blocked, holidays] = await Promise.all([import('./en/words.json'), import('./en/blocklist.json'), import('./en/holidays')]);
   return build('en', words.default, blocked.default, holidays.HOLIDAY_WORDS);
 }

@@ -40,6 +40,7 @@ export function normalizeForCheck(text: string): string {
 export const INFLECTIONS: Record<string, readonly string[]> = {
   en: ['', 's', 'es', 'ed', 'd', 'er', 'ers', 'ing', 'y', 'ty', 'ier', 'iest', 'ies', 'ish', 'head', 'heads', 'hole', 'holes'],
   fr: ['', 's', 'x', 'e', 'es', 'ee', 'ees', 'er', 'eur', 'eurs', 'euse', 'euses', 'ant', 'ent', 'ez', 'ons', 'ais', 'ait', 'aient', 'ie', 'ies'],
+  es: ['', 's', 'es', 'a', 'as', 'o', 'os', 'ar', 'ado', 'ada', 'ados', 'adas', 'ando', 'ito', 'ita', 'itos', 'itas', 'on', 'ona', 'ones', 'ero', 'era', 'eros', 'eras'],
 };
 
 /** Long terms are distinctive enough to block anywhere inside a real word. */

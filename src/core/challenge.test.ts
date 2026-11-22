@@ -53,6 +53,8 @@ describe('challenge links', () => {
   it('carries a words language other than English, and older links mean English', () => {
     const fr: Challenge = { ...sample, words: 'fr' };
     expect(decodeChallenge(encodeChallenge(fr), isLayout)).toEqual(fr);
+    const es: Challenge = { ...sample, words: 'es' };
+    expect(decodeChallenge(encodeChallenge(es), isLayout)).toEqual(es);
     // English links are exactly as before: no `w`.
     expect(JSON.parse(atob(encodeChallenge(sample).slice(2).replace(/-/g, '+').replace(/_/g, '/')))).not.toHaveProperty('w');
     expect(decodeChallenge(raw({ v: 1, d: 12, l: 'us-qwerty', s: 10, g: '' }), isLayout)?.words).toBe('en');

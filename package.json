@@ -1,6 +1,6 @@
 {
   "name": "inky-keys",
-  "version": "2.29.0",
+  "version": "2.30.0",
   "private": true,
   "description": "An offline-first, open-source typing game where you choose which keys to practice.",
   "license": "MIT",
@@ -36,6 +36,7 @@
     "fake-indexeddb": "^6.2.8",
     "globals": "^17.14.0",
     "naughty-words": "^1.2.0",
+    "nspell": "^2.1.5",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.72.2",
     "vite": "^8.3.8",

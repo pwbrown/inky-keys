@@ -232,6 +232,26 @@ const FRENCH = `(() => {
   return store.flush().then(() => 'ok');
 })()`;
 
+/**
+ * Spanish (M34): Spanish menus and words on the Spanish (Spain) keyboard, with
+ * the letter course finished and the first four accent chapters done, so the
+ * ¿ ¡ chapter is open.
+ */
+const SPANISH = `(() => {
+  const store = window.inkling && window.inkling.store;
+  if (!store || !('wordsLanguage' in store.data)) return 'no languages';
+  store.update((save) => {
+    save.wordsLanguage = 'es';
+    save.layout = 'es-iso';
+    save.apprentice.unlocked = 27;
+    save.apprentice.completed = true;
+    save.apprentice.accentStars = { es: [9, 9, 8, 9] };
+  });
+  const settings = JSON.parse(localStorage.getItem('inkling.settings') || '{}');
+  localStorage.setItem('inkling.settings', JSON.stringify({ ...settings, menuLanguage: 'es' }));
+  return store.flush().then(() => 'ok');
+})()`;
+
 /** Back to English menus and words on US QWERTY, for the rest of the tour. */
 const ENGLISH = `(() => {
   const store = window.inkling && window.inkling.store;
@@ -316,6 +336,11 @@ const MAIN_TOUR: Step[] = [
   { click: 'â ê î ô û' }, { wait: 2600 }, { shot: 'accent-intro' }, { key: 'Escape' },
   { click: 'Comment taper les accents' }, { wait: 400 }, { shot: 'accent-help' }, { key: 'Escape' }, { key: 'Escape' },
   { click: 'Écriture libre' }, { click: 'Changer les touches' }, { shot: 'type-case-accents' }, { key: 'Escape' }, { key: 'Escape' },
+  // Spanish (M34): Spanish menus, the Accents part with its ¿ ¡ chapter, and that chapter's opening card.
+  { eval: SPANISH }, { open: '?season=none' }, { shot: 'menu-es' },
+  { click: 'Aprendiz' }, { eval: SHOW_ACCENTS }, { wait: 300 }, { shot: 'contents-accents-es' },
+  { click: '¿ ¡' }, { wait: 2600 }, { shot: 'accent-intro-es' }, { key: 'Escape' },
+  { click: 'Cómo escribir acentos' }, { wait: 400 }, { shot: 'accent-help-es' }, { key: 'Escape' }, { key: 'Escape' },
   { eval: ENGLISH }, { open: '?season=none' },
   { click: 'How to play' }, { eval: SCROLL_TOP }, { shot: 'how-to-play' },
   { eval: SHOW_BOSSES }, { wait: 300 }, { shot: 'how-to-play-bosses' }, { key: 'Escape' },
@@ -381,6 +406,8 @@ const SITE_TOUR: Step[] = [
   { open: 'parents-and-teachers/' }, { shot: 'site-parents' }, { open: 'how-to-play/' }, { shot: 'site-how-to-play' },
   // French pages (M33), with the accent help page.
   { open: 'fr/accents/' }, { shot: 'site-fr-accents' },
+  // Spanish pages (M34), with the accent help page.
+  { open: 'es/accents/' }, { shot: 'site-es-accents' },
 ];
 
 const TOUR: Step[] =

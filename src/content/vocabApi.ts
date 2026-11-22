@@ -15,6 +15,7 @@ import type { Language } from '../core/languages';
 export const VOCAB_API_ORIGINS: Readonly<Record<Language, string>> = {
   en: 'https://en.wikipedia.org',
   fr: 'https://fr.wikipedia.org',
+  es: 'https://es.wikipedia.org',
 };
 
 /** English Wikipedia, as before. */

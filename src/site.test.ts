@@ -66,9 +66,41 @@ describe('website pages (scripts/site-pages.ts)', () => {
     expect(accents.body).toContain('<kbd>AltGr</kbd>');
   });
 
+  it('has Spanish pages under /es/, linked to the English and French ones', () => {
+    const es = loadPages(root, 'es');
+    expect(es.map((p) => p.slug).sort()).toEqual(['accents', 'how-to-play', 'parents-and-teachers', 'privacy']);
+    const all = loadAllPages(root);
+    for (const page of es) {
+      expect(page.description.length, page.slug).toBeLessThanOrEqual(170);
+      const html = renderPage(page, '', all);
+      expect(html).toContain('<html lang="es">');
+      expect(html).toContain(`<link rel="canonical" href="${SITE_URL}/es/${page.slug}/"`);
+      expect(html).not.toMatch(/<script/);
+    }
+    const guide = renderPage(es.find((p) => p.slug === 'how-to-play')!, '', all);
+    for (const [lang, path] of [['en', '/how-to-play/'], ['fr', '/fr/how-to-play/'], ['es', '/es/how-to-play/']]) {
+      expect(guide).toContain(`hreflang="${lang}" href="${SITE_URL}${path}"`);
+    }
+    // Every page offers both other languages, by their own names.
+    const english = renderPage(all.find((p) => p.slug === 'how-to-play' && p.locale === 'en')!, '', all);
+    expect(english).toContain('lang="fr">Français</a>');
+    expect(english).toContain('lang="es">Español</a>');
+  });
+
+  it('shows ñ, every Spanish accent and ¿ ¡ with keys on the Spanish and US keyboards', () => {
+    const accents = loadPages(root, 'es').find((p) => p.slug === 'accents')!;
+    for (const ch of 'ñáéíóúü¿¡') expect(accents.body).toContain(`<th>${ch}</th>`);
+    expect(accents.body).not.toContain('<td>–</td>');
+    expect(accents.body).toContain('<kbd>Opción</kbd>');
+    expect(accents.body).toContain('<kbd>AltGr</kbd>');
+    expect(accents.body).toContain('<kbd>Mayús</kbd>');
+  });
+
   it('lists the French pages in the sitemap too', () => {
     const xml = sitemap(loadAllPages(root), '2026-11-21');
     expect(xml).toContain(`<loc>${SITE_URL}/fr/accents/</loc>`);
     expect(xml).toContain(`<loc>${SITE_URL}/fr/privacy/</loc>`);
+    expect(xml).toContain(`<loc>${SITE_URL}/es/accents/</loc>`);
+    expect(xml).toContain(`<loc>${SITE_URL}/es/how-to-play/</loc>`);
   });
 });

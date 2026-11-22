@@ -111,6 +111,7 @@ describe('vocabulary download', () => {
 describe('French topic words', () => {
   it('asks French Wikipedia and keeps accented words', () => {
     expect(new URL(topicUrl('océan', 'fr')).host).toBe('fr.wikipedia.org');
+    expect(new URL(topicUrl('océano', 'es')).host).toBe('es.wikipedia.org');
     expect(new URL(topicUrl('ocean')).host).toBe('en.wikipedia.org');
     const dictionary = new Map([
       ['baleine', 2],

@@ -6,7 +6,7 @@ import { Blocklist } from './blocklist';
 import { generateString } from './generator';
 import { GAME_CONFIG, type TargetKind } from '../core/config';
 import { buildWordPool, pickWord, type PressCost, type RankedWord, type WordEntry } from './wordPool';
-import { isAccented, plainLetter } from '../core/accents';
+import { INVERTED_MARKS, isAccented, plainLetter } from '../core/accents';
 
 /**
  * Below this many typeable words, real words get repetitive, so generated
@@ -87,6 +87,8 @@ export interface ContentOptions {
   forgiving?: boolean;
   /** Above 1, words with an accent are picked more often (the "Letters + accents" preset). */
   accentBias?: number;
+  /** Chance a word gets trailing punctuation, when any is selected (higher in the ¿ ¡ chapter). */
+  punctuationChance?: number;
 }
 
 /** Share of words drawn from topic lists, when enough topic words fit the keys. */
@@ -153,6 +155,7 @@ export function createContentSource({
   pressCost,
   forgiving = false,
   accentBias = 1,
+  punctuationChance = PUNCTUATION_CHANCE,
 }: ContentOptions): ContentSource {
   if (keys.length === 0) throw new Error('A content source needs at least one key');
   const unique = [...new Set(keys)];
@@ -200,8 +203,13 @@ export function createContentSource({
     return styleWord(word, keySet, capitalize ? random : () => 1);
   };
 
-  const withPunctuation = (text: string, chance: number, random: () => number) =>
-    punctuation.length > 0 && random() < chance ? text + punctuation[Math.floor(random() * punctuation.length)] : text;
+  // Spanish: with ¿ or ¡ selected too, a question or exclamation opens with it ("¿qué?").
+  const opening = Object.fromEntries(Object.entries(INVERTED_MARKS).filter(([open]) => keySet.has(open)).map(([open, close]) => [close, open]));
+  const withPunctuation = (text: string, chance: number, random: () => number) => {
+    if (punctuation.length === 0 || random() >= chance) return text;
+    const mark = punctuation[Math.floor(random() * punctuation.length)]!;
+    return (opening[mark] ?? '') + text + mark;
+  };
 
   return {
     keys: unique,
@@ -251,7 +259,7 @@ export function createContentSource({
       return unique[indices[indices.length - 1]!]!;
     },
     nextWord(difficulty, random) {
-      return withPunctuation(baseWord(difficulty, random), PUNCTUATION_CHANCE, random);
+      return withPunctuation(baseWord(difficulty, random), punctuationChance, random);
     },
   };
 }

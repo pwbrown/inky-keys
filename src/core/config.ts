@@ -469,6 +469,8 @@ export const GAME_CONFIG = {
     slowdownSecPerPress: 0.6,
     /** With the "Letters + accents" preset, how much more often words with an accent are picked. */
     practiceWeight: 3,
+    /** In the ¿ ¡ chapter, the chance a word comes as a question or exclamation (otherwise 0.2). */
+    markChapterPunctuation: 0.6,
     /** An accent chapter's pages (the Contents page's "Accents" part). */
     plan: ['drip', 'blotling', 'blotling'] as TargetKind[],
     /** Accent chapters are paced like this Apprentice chapter (a gentle one: the letters are new). */

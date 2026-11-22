@@ -132,9 +132,10 @@ describe('Fair Copy', () => {
   });
 
   it('has passages made only of plain, typeable characters, each with its own id', () => {
-    // English: plain ASCII. French: plain ASCII plus the accented letters the French accent chapters teach.
+    // English: plain ASCII. French and Spanish: plain ASCII plus what their accent chapters teach (no accented capitals).
+    const allowed = { en: /^[\x20-\x7e]+$/, fr: /^[\x20-\x7eàâçéèêëîïôùûü]+$/, es: /^[\x20-\x7eáéíóúüñ¿¡]+$/ };
     for (const passage of PASSAGES) {
-      expect(passage.text, passage.id).toMatch(passage.lang === 'fr' ? /^[\x20-\x7eàâçéèêëîïôùûü]+$/ : /^[\x20-\x7e]+$/);
+      expect(passage.text, passage.id).toMatch(allowed[passage.lang]);
       expect(passage.text, passage.id).toBe(passage.text.normalize('NFC'));
     }
     expect(new Set(PASSAGES.map((p) => p.id)).size).toBe(PASSAGES.length);
@@ -144,5 +145,17 @@ describe('Fair Copy', () => {
     const french = PASSAGES.filter((p) => p.lang === 'fr');
     expect(french.length).toBeGreaterThanOrEqual(20);
     for (const p of french) expect(p.text, p.id).not.toMatch(/[«»\u00a0\u202f’]/);
+  });
+
+  it('has Spanish passages that keep ¿ ¡, in modern spelling, with plain punctuation', () => {
+    const spanish = PASSAGES.filter((p) => p.lang === 'es');
+    expect(spanish.length).toBeGreaterThanOrEqual(20);
+    expect(spanish.some((p) => p.text.includes('¿'))).toBe(true);
+    expect(spanish.some((p) => p.text.includes('¡'))).toBe(true);
+    for (const p of spanish) {
+      expect(p.text, p.id).not.toMatch(/[«»—–’“”…]/);
+      // Old spellings: "á" as a word, "fué", "dió"...
+      expect(p.text, p.id).not.toMatch(/(^|[^\p{L}])(á|é|ó|fué|fuí|dió|vió)(?![\p{L}])/u);
+    }
   });
 });

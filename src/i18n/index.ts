@@ -1,5 +1,6 @@
 import { en, type MessageKey } from './en';
 import { fr } from './fr';
+import { es } from './es';
 import { DEFAULT_LANGUAGE, languageFromTag, type Language } from '../core/languages';
 
 export type { MessageKey };
@@ -9,7 +10,7 @@ export type MessageParams = Record<string, string | number>;
 export type ReleaseKey = Extract<MessageKey, `release.${string}`>;
 export type Messages = Record<Exclude<MessageKey, ReleaseKey>, string> & Partial<Record<ReleaseKey, string>>;
 
-const locales: Record<Language, Messages> = { en, fr };
+const locales: Record<Language, Messages> = { en, fr, es };
 let active: Messages = en;
 let activeLocale: Language = DEFAULT_LANGUAGE;
 

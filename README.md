@@ -93,7 +93,7 @@ Every correct key flicks a drop of ink from your pen at the letter you typed. Th
 
 ### Word lists
 
-Press **W** to download words about a topic (e.g. *ocean*). Inky Keys fetches the topic's [Wikipedia](https://en.wikipedia.org/) article (from [French Wikipedia](https://fr.wikipedia.org/) for French words), sending only your topic, and picks the words that stand out in it. It keeps the clean single words, saves them on your device, and favours the ones your keys can type on word pages. Lists can be switched off or deleted. This is the only feature that uses the network, and only when you ask.
+Press **W** to download words about a topic (e.g. *ocean*). Inky Keys fetches the topic's [Wikipedia](https://en.wikipedia.org/) article (from [French Wikipedia](https://fr.wikipedia.org/) for French words, [Spanish Wikipedia](https://es.wikipedia.org/) for Spanish), sending only your topic, and picks the words that stand out in it. It keeps the clean single words, saves them on your device, and favours the ones your keys can type on word pages. Lists can be switched off or deleted. This is the only feature that uses the network, and only when you ask.
 
 ### After each page
 

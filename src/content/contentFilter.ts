@@ -129,3 +129,61 @@ export const FILTER_TERMS_FR: readonly string[] = [
   'nique', 'niquer', 'zob', 'couille', 'fion', 'bamboula', 'boche', 'rital', 'chinetoque', 'came', 'camé',
   'dealer', 'dealers', 'beuh', 'shit', 'teub', 'tafiole',
 ];
+
+/**
+ * The same groups for Spanish words (accents are folded before matching, so
+ * these are written without them). Added to LDNOOBW's short Spanish list.
+ */
+export const FILTER_TERMS_ES: readonly string[] = [
+  // identity
+  'gay', 'gays', 'lesbiana', 'lesbianas', 'homosexual', 'homosexuales',
+  // toilet
+  'pedo', 'caca', 'cacas', 'popo', 'mear', 'meado', 'meada', 'meon', 'vomito', 'vomitar',
+  'vomitona', 'moco', 'mocos', 'mocoso', 'eructo', 'eructar', 'trasero', 'nalga', 'nalgas', 'pompis',
+  'orina', 'orinar', 'excremento', 'mierdoso', 'cagar', 'cagada', 'cagado', 'cagon', 'zurullo', 'pipi',
+  // insults
+  'idiota', 'idiotas', 'imbecil', 'imbeciles', 'estupido', 'estupida', 'estupidos', 'estupidas',
+  'estupidez', 'cretino', 'cretina', 'tarado', 'tarada', 'subnormal', 'mongolo', 'retrasado',
+  'retrasada', 'maldito', 'maldita', 'malditos', 'malditas', 'condenado', 'condenada', 'gilipollas',
+  'capullo', 'capulla', 'pringado', 'imbecilidad',
+  'baboso', 'babosa', 'pendejo', 'pendeja', 'cabron', 'cabrona', 'carajo', 'joder',
+  'jodido', 'jodida', 'joderse', 'hostia', 'hostias', 'coñazo', 'puñetero', 'puñetera', 'mamon', 'mamona',
+  'huevon', 'huevona', 'boludo', 'boluda', 'pelotudo', 'pelotuda', 'chingar', 'chingada', 'chingado',
+  'pinche', 'verga', 'culero', 'culera', 'pajero', 'pajera', 'zorra', 'zorras', 'perra', 'perras',
+  // body
+  'pene', 'penes', 'vagina', 'vaginas', 'teta', 'tetas', 'tetilla', 'pezon', 'pezones', 
+  'testiculo', 'testiculos', 'escroto', 'utero', 'ovario', 'ovarios', 'ovulacion', 'embarazo',
+  'embarazada', 'embarazadas', 'aborto', 'abortar', 'feto', 'fetos', 'placenta', 'condon', 'condones',
+  'preservativo', 'menstruacion', 'menstrual', 'pubertad', 'pubis', 'genital', 'genitales',
+  'anal', 'esperma', 'semen', 'ereccion', 'circuncision', 'sifilis', 'venereo',
+  'virgen', 'virginidad', 'entrepierna', 'laxante', 'enema', 'sexo', 'sexos', 'sexual', 'sexuales',
+  'sexualidad', 'sexista', 'sexismo', 'culo', 'coño', 'polla', 'cojon', 'cojones',
+  'pito', 'chocho', 'concha', 'chucha', 'pija', 'paja', 'pajas',
+  // substances
+  'droga', 'drogas', 'drogar', 'drogado', 'drogada', 'drogadicto', 'cocaina', 'heroina', 'opio',
+  'morfina', 'cannabis', 'hachis', 'marihuana', 'porro', 'porros', 'canuto', 'narcotico', 'narco',
+  'narcos', 'alcohol', 'alcoholico', 'alcoholica', 'alcoholismo', 'borracho', 'borracha', 'borrachos',
+  'borrachera', 'ebrio', 'ebria', 'embriaguez', 'resaca', 'cerveza', 'cervezas', 'vinos',
+  'vodka', 'whisky', 'ron', 'tequila', 'ginebra', 'licor', 'licores', 'champan', 'cigarro', 'cigarros',
+  'cigarrillo', 'cigarrillos', 'tabaco', 'nicotina', 'fumar', 'fumador', 'fumadora',
+  // violence
+  'asesinato', 'asesinatos', 'asesino', 'asesina', 'asesinos', 'asesinar', 'homicidio', 'homicida',
+  'masacre', 'genocidio', 'degollar', 'estrangular', 'decapitar', 'decapitado', 'mutilar', 'mutilado',
+  'tortura', 'torturar', 'torturado', 'cadaver', 'cadaveres', 'suicidio', 'suicida', 'suicidarse',
+  'ahorcar', 'ahorcado', 'secuestro', 'secuestrar', 'secuestrador', 'terrorista', 'terrorismo',
+  'holocausto', 'verdugo', 'guillotina', 'matanza', 'carniceria', 'tiroteo', 'violacion', 'violar',
+  'violador', 'castrar', 'castracion', 'satanico', 'satanismo', 
+  // mature
+  'erotico', 'erotica', 'erotismo', 'sexy', 'porno', 'pornografia', 'pornografico', 'coito', 'copular',
+  'fornicar', 'fornicacion', 'adulterio', 'adultera', 'adultero', 'lujuria', 'lujurioso', 'obsceno',
+  'obscena', 'burdel', 'prostituta', 'prostituto', 'prostitucion', 'proxeneta', 'puta', 'puto',
+  'ramera', 'furcia', 'golfa', 'cortesana', 'concubina', 'amante', 'amantes', 'seducir', 'seductor',
+  'seductora', 'seduccion', 'pervertido', 'pervertida', 'perversion', 'fetichista', 'orgia', 'orgias',
+  'nudista', 'nudismo', 'striptease', 'lenceria', 'tanga', 'sadico', 'sadismo', 'masoquista',
+  'masoquismo', 'pedofilo', 'pedofilia', 'cachondo', 'cachonda', 'follar', 'follando', 'calentona',
+  'besuquear', 'desnudo', 'desnuda', 'desnudos', 'desnudas', 'cornudo',
+  // slurs
+  'negrata', 'sudaca', 'moro', 'gitano', 'gitana', 'marica', 'maricon', 'maricona', 'bollera',
+  'tortillera', 'travelo', 'panchito', 'mamada', 'bastardo', 'bastarda',
+  'hijoputa', 'malparido', 'mierda', 'mongol', 'sodomita', 'destripador',
+];

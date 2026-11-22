@@ -4,7 +4,7 @@
  * are static HTML with real text, so search engines and link previews have
  * something to read, while the game itself stays a canvas app.
  *
- * English pages are at the root and French ones under /fr/, linked with
+ * English pages are at the root, French and Spanish ones under /fr/ and /es/, linked with
  * hreflang. Page bodies live in site/<locale>/*.html (a short header comment gives the
  * title and description); the Privacy page is made from PRIVACY.md so there
  * is one source. Each page is wrapped in one shared layout and stylesheet
@@ -17,13 +17,14 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Plugin } from 'vite';
 import { ACCENT_CHAPTERS, howToType, type KeyStep } from '../src/core/accents';
-import { FR_AZERTY, US_QWERTY, forPlatform } from '../src/content/layouts';
+import { ES_ISO, FR_AZERTY, US_QWERTY, forPlatform } from '../src/content/layouts';
+import { LANGUAGE_NAMES } from '../src/core/languages';
 import type { KeyboardLayout, Platform } from '../src/content/layouts/types';
 
 export const SITE_URL = 'https://inkykeys.com';
 
 /** Languages the website is in: English at the root, others under /<locale>/. */
-export const SITE_LOCALES = ['en', 'fr'] as const;
+export const SITE_LOCALES = ['en', 'fr', 'es'] as const;
 export type SiteLocale = (typeof SITE_LOCALES)[number];
 
 export interface SitePage {
@@ -92,7 +93,7 @@ function parsePage(slug: string, locale: SiteLocale, source: string): SitePage {
 }
 
 /** Words of the shared layout, per locale (the pages' own text is in site/<locale>/). */
-const CHROME: Record<SiteLocale, { nav: [string, string][]; navLabel: string; play: string; footer: string; ogAlt: string; privacyTitle: string; privacyDescription: string; other: string }> = {
+const CHROME: Record<SiteLocale, { nav: [string, string][]; navLabel: string; play: string; footer: string; ogAlt: string; privacyTitle: string; privacyDescription: string }> = {
   en: {
     nav: [
       ['how-to-play', 'How to play'],
@@ -105,7 +106,6 @@ const CHROME: Record<SiteLocale, { nav: [string, string][]; navLabel: string; pl
     ogAlt: 'Inky Keys: ink-blot creatures carrying words crawl across a ruled notebook page toward a fountain-pen nib.',
     privacyTitle: 'Privacy',
     privacyDescription: 'Inky Keys collects nothing about you: no accounts, analytics, ads or tracking. Your progress stays on your device.',
-    other: 'Français',
   },
   fr: {
     nav: [
@@ -120,7 +120,20 @@ const CHROME: Record<SiteLocale, { nav: [string, string][]; navLabel: string; pl
     ogAlt: 'Inky Keys\u202f: des créatures en taches d’encre portant des mots traversent la page d’un cahier vers une plume.',
     privacyTitle: 'Confidentialité',
     privacyDescription: 'Inky Keys ne collecte rien sur toi\u202f: ni compte, ni statistiques, ni publicité, ni pistage. Ta progression reste sur ton appareil.',
-    other: 'English',
+  },
+  es: {
+    nav: [
+      ['how-to-play', 'Cómo jugar'],
+      ['parents-and-teachers', 'Para familias y docentes'],
+      ['accents', 'Escribir acentos'],
+      ['privacy', 'Privacidad'],
+    ],
+    navLabel: 'Páginas de Inky Keys',
+    play: 'Jugar a Inky Keys',
+    footer: 'Inky Keys es gratis y de código abierto (<a href="https://github.com/pwbrown/inky-keys">código fuente</a>). Sin anuncios, sin cuentas, sin rastreo.',
+    ogAlt: 'Inky Keys: criaturas de manchas de tinta que llevan palabras cruzan la página de un cuaderno hacia la punta de una pluma.',
+    privacyTitle: 'Privacidad',
+    privacyDescription: 'Inky Keys no recoge nada sobre ti: ni cuentas, ni estadísticas, ni anuncios, ni rastreo. Tu progreso se queda en tu dispositivo.',
   },
 };
 
@@ -147,7 +160,7 @@ export function loadPages(root: string, locale: SiteLocale = 'en'): SitePage[] {
     description: chrome.privacyDescription,
     body: `<h1>${chrome.privacyTitle}</h1>\n${markdownToHtml(privacy)}`,
   });
-  if (locale === 'fr') pages.push(accentsPage());
+  if (locale !== 'en') pages.push(accentsPage(locale));
   return pages;
 }
 
@@ -188,9 +201,13 @@ export function renderPage(page: SitePage, css = '', all: readonly SitePage[] = 
       ? versions.map((p) => `\n    <link rel="alternate" hreflang="${p.locale}" href="${SITE_URL}${pagePath(p)}" />`).join('') +
         `\n    <link rel="alternate" hreflang="x-default" href="${SITE_URL}${pagePath({ slug: page.slug, locale: 'en' })}" />`
       : '';
-  const other = SITE_LOCALES.find((l) => l !== page.locale) ?? 'en';
-  const otherPage = versions.find((p) => p.locale === other) ?? { slug: 'how-to-play', locale: other };
-  const languageLink = `<a href="${pagePath(otherPage)}" hreflang="${other}" lang="${other}">${CHROME[page.locale].other}</a>`;
+  // Each other language, by its own name.
+  const languageLink = SITE_LOCALES.filter((l) => l !== page.locale)
+    .map((other) => {
+      const otherPage = versions.find((p) => p.locale === other) ?? { slug: 'how-to-play', locale: other };
+      return `<a href="${pagePath(otherPage)}" hreflang="${other}" lang="${other}">${LANGUAGE_NAMES[other]}</a>`;
+    })
+    .join('\n        ');
   const robots = page.slug === '404' ? '\n    <meta name="robots" content="noindex" />' : '';
   return `<!doctype html>
 <html lang="${page.locale}">
@@ -258,39 +275,71 @@ function stepsHtml(steps: readonly KeyStep[], words: { shift: string; option: st
     .join(' → ');
 }
 
+/** What each language's accent help page says (site/<locale>/accents/). */
+interface AccentsPageText {
+  words: { shift: string; option: string };
+  keyboards: [string, KeyboardLayout, Platform, string][];
+  title: string;
+  description: string;
+  lead: string;
+}
+
+const ACCENTS_PAGE: Record<Exclude<SiteLocale, 'en'>, AccentsPageText> = {
+  fr: {
+    words: { shift: 'Maj', option: 'Option' },
+    keyboards: [
+      ['Clavier AZERTY (France)', FR_AZERTY, 'pc', 'Les lettres é, è, ç, à et ù ont leur propre touche. Pour les autres, appuie d’abord sur la touche d’accent ^ (avec Maj pour ¨), qui attend, puis sur la lettre. Sur un Mac, c’est pareil.'],
+      ['Clavier américain sur un Mac', US_QWERTY, 'mac', 'Maintiens Option et appuie sur une touche pour choisir l’accent, relâche\u202f: l’accent attend. Puis tape la lettre.'],
+      ['Clavier américain sur Windows ou un Chromebook', US_QWERTY, 'pc', 'Active d’abord le clavier «\u202fÉtats-Unis international\u202f» dans les paramètres. Les touches d’accent attendent alors la lettre suivante. Pour une simple apostrophe, appuie dessus puis sur la barre d’espace.'],
+    ],
+    title: 'Taper les accents',
+    description: 'Comment taper é, è, à, ù, ç, â, ê, î, ô, û, ë, ï et ü sur un clavier AZERTY, ou sur un clavier américain avec un Mac, Windows ou un Chromebook.',
+    lead: `Dans Inky Keys, les mots français gardent leurs accents. Chaque accent a sa page d’entraînement dans le sommaire de
+  l’Apprenti, et cette page résume les touches pour ton clavier. Les accents difficiles\u202f? L’option
+  <strong>Accents indulgents</strong>, dans les Réglages, laisse e compter pour é.`,
+  },
+  es: {
+    words: { shift: 'Mayús', option: 'Opción' },
+    keyboards: [
+      ['Teclado español (España)', ES_ISO, 'pc', 'La ñ tiene su propia tecla, y los signos ¡ y ¿ están a la derecha del 0 (¿ con Mayús). Para una vocal con tilde, pulsa primero la tecla del acento ´, que espera, y luego la vocal; con Mayús, esa tecla da la diéresis ¨ de la ü. En un Mac funciona igual.'],
+      ['Teclado estadounidense en un Mac', US_QWERTY, 'mac', 'Mantén pulsada Opción, pulsa la tecla del acento y suelta: el acento espera. Luego escribe la letra. ¡ y ¿ salen directamente con Opción.'],
+      ['Teclado estadounidense en Windows o en un Chromebook', US_QWERTY, 'pc', 'Primero activa el teclado "Estados Unidos-Internacional" en la configuración. Las teclas de acento esperan entonces a la letra siguiente, y Alt Gr da la ñ, ¡ y ¿. Para un apóstrofo solo, púlsalo y luego la barra espaciadora.'],
+    ],
+    title: 'Escribir acentos',
+    description: 'Cómo escribir ñ, á, é, í, ó, ú, ü, ¿ y ¡ en un teclado español, o en un teclado estadounidense con un Mac, Windows o un Chromebook.',
+    lead: `En Inky Keys, las palabras en español conservan sus tildes. Cada acento, y también ¿ ¡, tiene su capítulo en el índice del
+  Aprendiz, y esta página resume las teclas para tu teclado. ¿Te cuestan los acentos? La opción
+  <strong>Acentos sin penalización</strong>, en Ajustes, deja que la e cuente como é.`,
+  },
+};
+
 /**
- * The French accent help page (site/fr/accents/): every accented letter of
- * French with its keys on AZERTY and on a US keyboard (Mac and
- * Windows/Chromebook), drawn from the same howToType the game uses.
+ * A language's accent help page (site/<locale>/accents/): every accented
+ * letter of the language (and ¿ ¡ for Spanish) with its keys on that
+ * country's keyboard and on a US keyboard (Mac and Windows/Chromebook),
+ * drawn from the same howToType the game uses.
  */
-function accentsPage(): SitePage {
-  const words = { shift: 'Maj', option: 'Option' };
-  const keyboards: [string, KeyboardLayout, Platform, string][] = [
-    ['Clavier AZERTY (France)', FR_AZERTY, 'pc', 'Les lettres é, è, ç, à et ù ont leur propre touche. Pour les autres, appuie d’abord sur la touche d’accent ^ (avec Maj pour ¨), qui attend, puis sur la lettre. Sur un Mac, c’est pareil.'],
-    ['Clavier américain sur un Mac', US_QWERTY, 'mac', 'Maintiens Option et appuie sur une touche pour choisir l’accent, relâche\u202f: l’accent attend. Puis tape la lettre.'],
-    ['Clavier américain sur Windows ou un Chromebook', US_QWERTY, 'pc', 'Active d’abord le clavier «\u202fÉtats-Unis international\u202f» dans les paramètres. Les touches d’accent attendent alors la lettre suivante. Pour une simple apostrophe, appuie dessus puis sur la barre d’espace.'],
-  ];
-  const letters = ACCENT_CHAPTERS.fr.flat();
-  const sections = keyboards.map(([title, layout, platform, intro]) => {
+function accentsPage(locale: Exclude<SiteLocale, 'en'>): SitePage {
+  const text = ACCENTS_PAGE[locale];
+  const letters = ACCENT_CHAPTERS[locale].flat();
+  const sections = text.keyboards.map(([title, layout, platform, intro]) => {
     const variant = forPlatform(layout, platform);
     const rows = letters
       .map((ch) => {
         const steps = howToType(ch, variant, platform);
-        return `  <tr><th>${ch}</th><td>${steps ? stepsHtml(steps, words) : '–'}</td></tr>`;
+        return `  <tr><th>${ch}</th><td>${steps ? stepsHtml(steps, text.words) : '–'}</td></tr>`;
       })
       .join('\n');
     return `<h2>${title}</h2>\n<p>${intro}</p>\n<table class="accents">\n${rows}\n</table>`;
   });
   return {
     slug: 'accents',
-    locale: 'fr',
-    title: 'Taper les accents',
-    description: 'Comment taper é, è, à, ù, ç, â, ê, î, ô, û, ë, ï et ü sur un clavier AZERTY, ou sur un clavier américain avec un Mac, Windows ou un Chromebook.',
-    body: `<h1>Taper les accents</h1>
+    locale,
+    title: text.title,
+    description: text.description,
+    body: `<h1>${text.title}</h1>
 <p class="lead">
-  Dans Inky Keys, les mots français gardent leurs accents. Chaque accent a sa page d’entraînement dans le sommaire de
-  l’Apprenti, et cette page résume les touches pour ton clavier. Les accents difficiles\u202f? L’option
-  <strong>Accents indulgents</strong>, dans les Réglages, laisse e compter pour é.
+  ${text.lead}
 </p>
 ${sections.join('\n\n')}`,
   };

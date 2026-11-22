@@ -5,7 +5,7 @@ import { countTypeableWords, createContentSource, MIN_WORD_POOL } from './conten
 import { Blocklist } from './content/blocklist';
 import { loadPack, type ContentPack } from './content/packs';
 import { LANGUAGE_NAMES, type Language } from './core/languages';
-import { ACCENT_CHAPTERS, accentedLetters, accentMethod, howToType, isAccented, plainLetter, pressCostFor } from './core/accents';
+import { ACCENT_CHAPTERS, accentedLetters, accentMethod, howToType, INVERTED_MARKS, needsKeySteps, plainLetter, pressCostFor } from './core/accents';
 import { stepText } from './ui/keySteps';
 import { openAccentHelp } from './ui/accentHelp';
 import { openAccentIntro } from './ui/accentIntro';
@@ -115,6 +115,8 @@ async function main(): Promise<void> {
   /** The words language's accented letters this player can type on their keyboard (core/accents.ts). */
   const typeableAccents = () => accentedLetters(store.data.wordsLanguage).filter((ch) => howToType(ch, layout(), settings.keyboardKind));
   const presets = () => builtInPresets(layout(), typeableAccents());
+  /** False only for an accent (or ¿ ¡) this keyboard has no way to type. */
+  const canType = (ch: string) => !needsKeySteps(ch) || howToType(ch, layout(), settings.keyboardKind) !== null;
   const backend = await openBackend();
   // Each player on this browser has their own save (storage/profiles.ts).
   const players = await PlayerStore.open(backend, t('players.defaultName'));
@@ -393,7 +395,8 @@ async function main(): Promise<void> {
    */
   const dailyContent = () =>
     createContentSource({
-      keys: dailyKeys(layout(), store.data.wordsLanguage),
+      // Accents the keyboard can't type (á on AZERTY) are left out.
+      keys: dailyKeys(layout(), store.data.wordsLanguage).filter(canType),
       words: words().words,
       blocklist: words().blocklist,
       trustedWords: true,
@@ -462,7 +465,7 @@ async function main(): Promise<void> {
    */
   const briefAccents = (chars: Iterable<string>, then: () => void) => {
     const seen = new Set(store.data.accents.seen);
-    const fresh = [...new Set(chars)].filter((ch) => isAccented(ch) && !seen.has(ch) && howToType(ch, layout(), settings.keyboardKind));
+    const fresh = [...new Set(chars)].filter((ch) => needsKeySteps(ch) && !seen.has(ch) && howToType(ch, layout(), settings.keyboardKind));
     if (fresh.length === 0 || store.data.accents.forgiving || !store.data.tutorials.enabled || dialogOpen) {
       then();
       return;
@@ -523,7 +526,10 @@ async function main(): Promise<void> {
   const accentContent = (chapter: number) => {
     const chapters = ACCENT_CHAPTERS[store.data.wordsLanguage];
     const fresh = chapters[chapter] ?? [];
-    const keys = [...apprenticeKeys(layout(), APPRENTICE_CHAPTERS - 1), ...chapters.slice(0, chapter + 1).flat()];
+    const taught = chapters.slice(0, chapter + 1).flat().filter(canType);
+    // ¿ ¡ come with the ? ! that close them.
+    const closing = taught.flatMap((ch) => INVERTED_MARKS[ch] ?? []);
+    const keys = [...new Set([...apprenticeKeys(layout(), APPRENTICE_CHAPTERS - 1), ...taught, ...closing])];
     const weights = keyWeights(store.data.keyStats, keys);
     for (const key of fresh) weights[key] = (weights[key] ?? 1) * GAME_CONFIG.accents.newLetterWeight;
     return createContentSource({
@@ -534,6 +540,7 @@ async function main(): Promise<void> {
       keyWeights: weights,
       pressCost: pressCostFor(layout(), settings.keyboardKind),
       accentBias: GAME_CONFIG.accents.chapterWordBias,
+      ...(fresh.some((ch) => ch in INVERTED_MARKS) ? { punctuationChance: GAME_CONFIG.accents.markChapterPunctuation } : {}),
     });
   };
 

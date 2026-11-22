@@ -474,6 +474,229 @@ export const PASSAGES: readonly Passage[] = [
       'bien que la maison ne nous appartienne plus. Nous avons quitté le pays depuis bientôt quinze ans ' +
       "et nous n'y reviendrons certainement jamais.",
   },
+  // Spanish: public-domain texts in the original, keeping ¿ ¡ and accents, with plain
+  // punctuation (straight quotes, no dashes). Copied from es.wikisource.org and checked
+  // word for word against those pages; only modern-spelling stretches are used.
+  {
+    id: 'cervantes-quijote',
+    lang: 'es',
+    title: 'Don Quijote de la Mancha',
+    author: 'Miguel de Cervantes',
+    text:
+      'En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los ' +
+      'de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, ' +
+      'salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura ' +
+      'los domingos, consumían las tres partes de su hacienda.',
+  },
+  {
+    id: 'cervantes-molinos',
+    lang: 'es',
+    title: 'Don Quijote de la Mancha',
+    author: 'Miguel de Cervantes',
+    text:
+      '¿Qué gigantes? dijo Sancho Panza. Aquellos que allí ves, respondió su amo, de los brazos largos, que los ' +
+      'suelen tener algunos de casi dos leguas. Mire vuestra merced, respondió Sancho, que aquellos que allí se ' +
+      'parecen no son gigantes, sino molinos de viento, y lo que en ellos parecen brazos son las aspas, que, ' +
+      'volteadas del viento, hacen andar la piedra del molino.',
+  },
+  {
+    id: 'calderon-vida-sueno',
+    lang: 'es',
+    title: 'La vida es sueño',
+    author: 'Pedro Calderón de la Barca',
+    text:
+      'Yo sueño que estoy aquí Destas prisiones cargado, Y soñé que en otro estado Mas lisonjero me vi. ¿Qué es la ' +
+      'vida? Un frenesí. ¿Qué es la vida? Una ilusión, Una sombra, una ficción, Y el mayor bien es pequeño: Que toda ' +
+      'la vida es sueño, Y los sueños sueño son.',
+  },
+  {
+    id: 'galdos-trafalgar',
+    lang: 'es',
+    title: 'Trafalgar',
+    author: 'Benito Pérez Galdós',
+    text:
+      'Se me permitirá que antes de referir el gran suceso de que fui testigo, diga algunas palabras sobre mi ' +
+      'infancia, explicando por qué extraña manera me llevaron los azares de la vida a presenciar la terrible ' +
+      'catástrofe de nuestra marina.',
+  },
+  {
+    id: 'becquer-rayo-de-luna',
+    lang: 'es',
+    title: 'El rayo de luna',
+    author: 'Gustavo Adolfo Bécquer',
+    text:
+      'Yo no sé si esto es una historia que parece cuento o un cuento que parece historia; lo que puedo decir es que ' +
+      'en su fondo hay una verdad, una verdad muy triste, de la que acaso yo seré uno de los últimos en aprovecharme, ' +
+      'dadas mis condiciones de imaginación. Otro, con esta idea, tal vez hubiera hecho un tomo de filosofía ' +
+      'lacrimosa; yo he escrito esta leyenda, que, a los que nada vean en su fondo, al menos podrá entretenerlos un ' +
+      'rato.',
+  },
+  {
+    id: 'dario-sonatina',
+    lang: 'es',
+    title: 'Sonatina',
+    author: 'Rubén Darío',
+    text:
+      'La princesa está triste... ¿qué tendrá la princesa? Los suspiros se escapan de su boca de fresa, Que ha ' +
+      'perdido la risa, que ha perdido el color. La princesa está pálida en su silla de oro, Está mudo el teclado de ' +
+      'su clave sonoro; Y en un vaso olvidada se desmaya una flor.',
+  },
+  {
+    id: 'dario-margarita',
+    lang: 'es',
+    title: 'A Margarita Debayle',
+    author: 'Rubén Darío',
+    text:
+      'Margarita, está linda la mar, y el viento lleva esencia sutil de azahar; yo siento en el alma una alondra ' +
+      'cantar; tu acento. Margarita, te voy a contar un cuento. Este era un rey que tenía un palacio de diamantes, ' +
+      'una tienda hecha del día y un rebaño de elefantes, un kiosko de malaquita, un gran manto de tisú, y una gentil ' +
+      'princesita, tan bonita, Margarita, tan bonita como tú.',
+  },
+  {
+    id: 'marti-rosa-blanca',
+    lang: 'es',
+    title: 'Versos sencillos',
+    author: 'José Martí',
+    text:
+      'Cultivo una rosa blanca En julio como enero, Para el amigo sincero Que me da su mano franca. Y para el cruel ' +
+      'que me arranca El corazón con que vivo, Cardo ni ortiga cultivo; Cultivo la rosa blanca.',
+  },
+  {
+    id: 'marti-zapaticos',
+    lang: 'es',
+    title: 'Los zapaticos de rosa',
+    author: 'José Martí',
+    text:
+      'Hay sol bueno y mar de espuma, Y arena fina, y Pilar Quiere salir a estrenar Su sombrerito de pluma. "¡Vaya la ' +
+      'niña divina!" Dice el padre, y le da un beso: "Vaya mi pájaro preso A buscarme arena fina." "Yo voy con mi ' +
+      'niña hermosa", Le dijo la madre buena: "¡No te manches en la arena Los zapaticos de rosa!" Fueron las dos al ' +
+      'jardín Por la calle del laurel: La madre cogió un clavel Y Pilar cogió un jazmín.',
+  },
+  {
+    id: 'clarin-cordera',
+    lang: 'es',
+    title: '¡Adiós, Cordera!',
+    author: 'Leopoldo Alas "Clarín"',
+    text:
+      '¡Eran tres: siempre los tres! Rosa, Pinín y la Cordera. El prao Somonte era un recorte triangular de ' +
+      'terciopelo verde tendido, como una colgadura, cuesta abajo por la loma. Uno de sus ángulos, el inferior, lo ' +
+      'despuntaba el camino de hierro de Oviedo a Gijón.',
+  },
+  {
+    id: 'quiroga-tortuga',
+    lang: 'es',
+    title: 'La tortuga gigante',
+    author: 'Horacio Quiroga',
+    text:
+      'Había una vez un hombre que vivía en Buenos Aires, y estaba muy contento porque era un hombre sano y ' +
+      'trabajador. Pero un día se enfermó, y los médicos le dijeron que solamente yéndose al campo podría curarse. El ' +
+      'no quería ir, porque tenía hermanos chicos a quienes daba de comer; y se enfermaba cada día más.',
+  },
+  {
+    id: 'machado-caminante',
+    lang: 'es',
+    title: 'Campos de Castilla',
+    author: 'Antonio Machado',
+    text:
+      'Caminante, son tus huellas el camino, y nada más; caminante, no hay camino: se hace camino al andar. Al andar ' +
+      'se hace camino, y al volver la vista atrás se ve la senda que nunca se ha de volver a pisar. Caminante, no hay ' +
+      'camino, sino estelas en la mar.',
+  },
+  {
+    id: 'pombo-renacuajo',
+    lang: 'es',
+    title: 'El renacuajo paseador',
+    author: 'Rafael Pombo',
+    text:
+      'El hijo de rana, Rinrín renacuajo Salió esta mañana muy tieso y muy majo Con pantalón corto, corbata a la moda ' +
+      'Sombrero encintado y chupa de boda. ¡Muchacho, no salgas! le grita mamá pero él hace un gesto y orondo se va. ' +
+      'Halló en el camino, a un ratón vecino Y le dijo: ¡amigo! venga usted conmigo, Visitemos juntos a doña ratona Y ' +
+      'habrá francachela y habrá comilona.',
+  },
+  {
+    id: 'pombo-mirringa',
+    lang: 'es',
+    title: 'Mirringa Mirronga',
+    author: 'Rafael Pombo',
+    text:
+      'Llegaron en coche ya entrada la noche señores y damas, con muchas zalemas, en grande uniforme, de cola y de ' +
+      'guante, con cuellos muy tiesos y frac elegante. Al cerrar la puerta Mirriña la tuerta en una cabriola se ' +
+      'mordió la cola, mas olió el tocino y dijo "¡Miaao! ¡Este es un banquete de pipiripao!"',
+  },
+  {
+    id: 'pombo-simon',
+    lang: 'es',
+    title: 'Simón el bobito',
+    author: 'Rafael Pombo',
+    text:
+      'Simón el bobito llamó al pastelero: ¡a ver los pasteles, los quiero probar! Sí, repuso el otro, pero antes yo ' +
+      'quiero ver ese cuartillo con que has de pagar. Buscó en los bolsillos el buen Simoncito y dijo: ¡de veras! no ' +
+      'tengo ni unito. A Simón el bobito le gusta el pescado Y quiere volverse también pescador, Y pasa las horas ' +
+      'sentado, sentado, Pescando en el balde de mamá Leonor.',
+  },
+  {
+    id: 'quiroga-flamencos',
+    lang: 'es',
+    title: 'Las medias de los flamencos',
+    author: 'Horacio Quiroga',
+    text:
+      'Cierta vez las víboras dieron un gran baile. Invitaron a las ranas y los sapos, a los flamencos, y a los ' +
+      'yacarés y los pescados. Los pescados, como no caminan, no pudieron bailar; pero siendo el baile a la orilla ' +
+      'del río, los pescados estaban asomados a la arena, y aplaudían con la cola.',
+  },
+  {
+    id: 'quiroga-loro',
+    lang: 'es',
+    title: 'El loro pelado',
+    author: 'Horacio Quiroga',
+    text:
+      'Había una vez una bandada de loros que vivían en el monte. De mañana, temprano iban a comer choclos a la ' +
+      'chacra, y de tarde comían naranjas. Hacían gran barullo con sus gritos, y tenían siempre un loro de centinela ' +
+      'en los árboles más altos, para ver si venía alguien.',
+  },
+  {
+    id: 'dario-lobo',
+    lang: 'es',
+    title: 'Los motivos del lobo',
+    author: 'Rubén Darío',
+    text:
+      'El varón que tiene corazón de lis, alma de querube, lengua celestial, el mínimo y dulce Francisco de Asís, ' +
+      'está con un rudo y torvo animal, bestia temerosa, de sangre y de robo, las fauces de furia, los ojos de mal: ' +
+      '¡el lobo de Gubbia, el terrible lobo!',
+  },
+  {
+    id: 'samaniego-cuervo',
+    lang: 'es',
+    title: 'El cuervo y el zorro',
+    author: 'Félix María de Samaniego',
+    text:
+      'Al oír un discurso tan dulce y halagüeño, de vanidad llevado, quiso cantar el Cuervo. Abrió su negro pico, ' +
+      'dejó caer el queso. El muy astuto Zorro, después de haberle preso, le dijo: "Señor bobo, pues sin otro ' +
+      'alimento, quedáis con alabanzas tan hinchado y repleto, digerid las lisonjas mientras yo digiero el queso" ' +
+      'Quien oye aduladores, nunca espere otro premio.',
+  },
+  {
+    id: 'galdos-misericordia',
+    lang: 'es',
+    title: 'Misericordia',
+    author: 'Benito Pérez Galdós',
+    text:
+      'Antes de que concluyera la frase, el D. Carlos voló; y lo digo así, porque el terrible huracán hizo presa en ' +
+      'su desmedida capa, y allá veríais al hombre, con todo el paño arremolinado en la cabeza, dando tumbos y giros, ' +
+      'como un rollo de tela o un pedazo de alfombra arrebatados por el viento, hasta que fue a dar de golpe contra ' +
+      'la puerta, y entró ruidosa y atropelladamente, desembarazando su cabeza del trapo que la envolvía.',
+  },
+  {
+    id: 'becquer-corza',
+    lang: 'es',
+    title: 'La corza blanca',
+    author: 'Gustavo Adolfo Bécquer',
+    text:
+      'En efecto, era así, pues a poco de haberse oído la esquililla empezaron a saltar por entre las apiñadas matas ' +
+      'de cantueso y tomillo y a descender a la orilla opuesta del riachuelo, hasta unos cien corderos blancos como ' +
+      'la nieve, detrás de los cuales, con su caperuza calada para libertarse la cabeza de los perpendiculares rayos ' +
+      'del sol, y su hatillo al hombro en la punta de un palo, apareció el zagal que los conducía.',
+  },
 ];
 
 export function isPassageId(value: unknown): value is string {

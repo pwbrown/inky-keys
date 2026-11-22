@@ -460,15 +460,40 @@ Stickers arrive the moment they're earned, with a toast in the corner that doesn
 
 **Before release:** a native speaker reviews `fr.ts` and the French pages; Windows AltGr and US-International need a Windows tester.
 
+### M34: Español (2.30.0)
+
+| Spanish menus | Accents in the Contents, in Spanish |
+|---|---|
+| <img src="m34/menu-es.png" width="420" alt="The title menu in Spanish: Escritura libre, Página del día, Aprendiz, Copia en limpio, Escritorio, Pegatinas, Listas de palabras, Cómo jugar, Ajustes, Datos guardados and Acerca de, each with its Spanish shortcut letter"> | <img src="m34/contents-accents-es.png" width="420" alt="The Apprentice Contents page in Spanish: below the 27 chapters, an Acentos part with five chapters, ñ, á é, í ó ú, ü (with stars) and ¿ ¡ (open, no stars yet), and a Cómo escribir acentos link"> |
+| Menus in Spanish, with tú and Spanish shortcut letters and keycaps. | Five Spanish accent chapters; the last teaches the opening marks ¿ ¡. |
+
+| The ¿ ¡ chapter's card | The accent help card on the Spanish keyboard |
+|---|---|
+| <img src="m34/accent-intro-es.png" width="420" alt="The card opening Acentos 5: ¿ equals Mayús plus the key right of 0, and ¡ is that key alone, with an Empezar button"> | <img src="m34/accent-help-es.png" width="420" alt="The accent help card in Spanish on the Spanish (Spain) keyboard: ñ on its own key, the vowels with tildes as the ´ key then the letter, ü with Mayús and ´ then u, and ¿ ¡ right of 0"> |
+| The same numbered keycaps as the French accents, now for punctuation too. | Every Spanish accent and mark, with the keys for the player's keyboard. |
+
+<img src="m34/site-es-accents.png" width="420" alt="The Spanish web page Escribir acentos: a table of ñ, á é í ó ú, ü, ¿ and ¡ with their keys on the Spanish keyboard, then on a US keyboard on a Mac and on Windows or a Chromebook">
+
+**New:**
+- **Spanish menus** (`src/i18n/es.ts`, drafted for a native speaker to review on a shared review page), addressing players with *tú*; `es` follows the language system M33 built.
+- **Spanish words:** 42,775 words ranked by FrequencyWords' OpenSubtitles 2018 counts (CC BY-SA 4.0), kept only where the RLA-ES Hunspell dictionary accepts them in lowercase (dropping names, English and typos; the dictionary is a build-time filter, not bundled), with a short hand-checked list of diminutives it misses. LDNOOBW's Spanish list plus a Spanish family-friendly filter and allow list. Navidad words; downloaded words from `es.wikipedia.org`.
+- **Accent chapters ñ · á é · í ó ú · ü · ¿ ¡.** With ¿ or ¡ selected, questions and exclamations open with them (¿qué? ¡hola!); the ¿ ¡ chapter leans on them. The Letters + punctuation preset gets ¿ ¡; Letters + accents stays letters. A miss on ¿ or ¡ shows its keys, like an accent.
+- **The Spanish Daily Page** includes ñ and every accent, not ¿ ¡; accents a keyboard can't type (á on AZERTY) are left out of the Daily Page and accent chapters there.
+- **Fair Copy:** 21 Spanish public-domain passages (Cervantes, Calderón, Galdós, Bécquer, Darío, Martí, Clarín, Quiroga, Machado, Pombo, Samaniego), keeping ¿ ¡, copied from es.wikisource.org and checked word for word; only modern-spelling stretches are used.
+- **Spanish web pages** under `/es/` (How to play, For parents and teachers, Privacy, Accents); the accents page is now made for any language, and every page links both other languages.
+- The snapshot tour has `menu-es`, `contents-accents-es`, `accent-intro-es`, `accent-help-es` and `site-es-accents` shots.
+
+**Before release:** a native speaker reviews `es.ts` and the Spanish pages (the game may ship first); a Latin American layout is a later layout file.
+
 ## Keeping this up to date
 
 At the end of each milestone, run:
 
 ```bash
-npm run snapshots -- m33
+npm run snapshots -- m34
 ```
 
-That writes a standard set of shots to `docs/progression/m33/` (keyboard-notice, splash, menu, about, desk, players, settings, settings-layout, type-case-dvorak, chapter-intro-dvorak, type-case-azerty, type-case-spanish, menu-fr, contents-accents, accent-intro, accent-help, type-case-accents, how-to-play, how-to-play-bosses, daily, stickers, challenge, practice, type-case, briefing, lineup, capitals, pause, contents, chapter-intro, play, page-done, and the holiday shots menu-thanksgiving, lineup-thanksgiving, menu-christmas, lineup-christmas, desk-holidays and stickers-holidays, then the web pages site-parents, site-how-to-play and site-fr-accents). `npm run snapshots -- m33 holidays` takes only the holiday shots. Then:
+That writes a standard set of shots to `docs/progression/m34/` (keyboard-notice, splash, menu, about, desk, players, settings, settings-layout, type-case-dvorak, chapter-intro-dvorak, type-case-azerty, type-case-spanish, menu-fr, contents-accents, accent-intro, accent-help, type-case-accents, menu-es, contents-accents-es, accent-intro-es, accent-help-es, how-to-play, how-to-play-bosses, daily, stickers, challenge, practice, type-case, briefing, lineup, capitals, pause, contents, chapter-intro, play, page-done, and the holiday shots menu-thanksgiving, lineup-thanksgiving, menu-christmas, lineup-christmas, desk-holidays and stickers-holidays, then the web pages site-parents, site-how-to-play, site-fr-accents and site-es-accents). `npm run snapshots -- m34 holidays` takes only the holiday shots. Then:
 
 1. Run `npm run snapshots -- latest` too, so the "Latest" column matches.
 2. Add a section under **Milestone by milestone** with one or two shots and what's **New** or **Changed**.

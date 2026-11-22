@@ -15,7 +15,7 @@ import { canStart, onBossPartDone } from './bosses';
 import { applyBriefings } from './mechanics';
 import { createStats, earnPoints, type Stats } from './stats';
 import { charAt, charCount } from './text';
-import { isAccented, plainLetter } from './accents';
+import { needsKeySteps, plainLetter } from './accents';
 import {
   REVEALED_X,
   WORLD_WIDTH,
@@ -68,8 +68,8 @@ function registerError(world: World, key: string, target: Target | undefined, ex
   // the locked target's next character, or the most urgent target's.
   const intended = target ?? mostUrgent(visibleTargets(world));
   const expected = expectedChar === undefined ? (intended ? charAt(intended.text, intended.typed) : undefined) : (expectedChar ?? undefined);
-  // A miss on an accented letter: that creature shows the keys for it.
-  if (intended && expected !== undefined && isAccented(expected)) world.accentHint = { targetId: intended.id, char: expected, key };
+  // A miss on an accented letter (or ¿ ¡): that creature shows the keys for it.
+  if (intended && expected !== undefined && needsKeySteps(expected)) world.accentHint = { targetId: intended.id, char: expected, key };
 
   // An armed Eraser rubs the slip out: no cost, and the run carries on. The
   // key is still noted, so practice keeps focusing on it.

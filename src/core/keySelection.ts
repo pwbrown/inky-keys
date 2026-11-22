@@ -133,9 +133,10 @@ export function builtInPresets(layout: KeyboardLayout, accents: readonly string[
     preset('allLetters', r('lowercase')),
     // What a brand-new player starts with (DEFAULT_KEYS in config.ts), shown as "All letters".
     preset('lettersCapitals', [...r('lowercase'), ...r('uppercase')]),
-    preset('lettersPunctuation', [...r('lowercase'), ...r('uppercase'), ...[',', '.', "'", '?', '!'].filter((ch) => chars.has(ch))]),
+    // Spanish adds its opening ¿ ¡ (passed in with the accents).
+    preset('lettersPunctuation', [...r('lowercase'), ...r('uppercase'), ...[',', '.', "'", '?', '!'].filter((ch) => chars.has(ch)), ...accents.filter((ch) => !isLetter(ch))]),
     // Accent practice, for a words language with accents: words lean towards accented ones.
-    ...(accents.length > 0 ? [preset(LETTERS_ACCENTS, [...r('lowercase'), ...accents])] : []),
+    ...(accents.length > 0 ? [preset(LETTERS_ACCENTS, [...r('lowercase'), ...accents.filter(isLetter)])] : []),
     preset('numbers', r('digits')),
     preset('numberSymbols', digitKeySymbols(layout)),
     preset('symbols', r('symbols')),
