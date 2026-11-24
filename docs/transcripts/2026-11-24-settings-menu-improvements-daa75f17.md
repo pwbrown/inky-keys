@@ -1,6 +1,6 @@
 # Settings menu improvements
 
-Claude Code session started 2026-11-24. 4 prompts.
+Claude Code session started 2026-11-24. 7 prompts.
 
 Exported with `npm run transcript`. Tool output, hidden reasoning and system prompts are left out; commands are cut short when long. Private details (email, home folder) are removed.
 
@@ -1099,12 +1099,258 @@ If it still looks a little off, the 4px gap is a single setting (`fairCopy.basel
 
 > Looks good, commit
 
-<details><summary>1 tool call</summary>
+<details><summary>4 tool calls</summary>
 
 - **Shell:** Export transcript and list changes
 
   ```bash
   npm run transcript 2>&1 | tail -5; git status --short | head -40
+  ```
+- **Shell:** Scan transcripts for private details
+
+  ```bash
+  F="docs/transcripts/2026-11-24-settings-menu-improvements-daa75f17.md docs/transcripts/2026-11-20-french-and-spanish-language-support-bb9f5c45.md"; grep -noE "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}" $F | sort -u | head; grep -noE "/Users/[^ /]+|/private/tmp[^ )]*" $F | head -5; grep -niE "(api[_-]?key|token|secret|password)[\"' :=]+[A-Za-z0-9_-]{12,}|sk-[A-Za-z0-9]{10,}|gh[pousr]_[A-Za-z0-9]{10,}" $F | head
+  ```
+- **Shell:** Scan each transcript for private details
+
+  ```bash
+  cd /Users/[removed]/projects/inky-keys/docs/transcripts && for f in 2026-11-24-settings-menu-improvements-daa75f17.md 2026-11-20-french-and-spanish-language-support-bb9f5c45.md; do echo "== $f"; grep -noE "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}" "$f" | sort -u | head; grep -noE "/Users/[^ /]+|/private/tmp[^ )]*" "$f" | head -5; grep -niE "(api[_-]?key|token|secret|password)[\"' :=]+[A-Za-z0-9_-]{12,}|sk-[A-Za-z0-9]{10,}|gh[pousr]_[A-Za-z0-9]{10,}" "$f" | head; done
+  ```
+- **Shell:** Inspect temp-path mentions in new transcript
+
+  ```bash
+  sed -n 984,988p 2026-11-24-settings-menu-improvements-daa75f17.md | cut -c1-250; grep -c "private/tmp" 2026-11-24-settings-menu-improvements-daa75f17.md; grep -noE "private/tmp/[^ )\`]*" 2026-11-24-settings-menu-improvements-daa75f17.md | head -3
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Transcripts are clean: personal paths are already redacted, and the only leftover is a cut-off temp path with no username in it. Committing.
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Commit, fast-forward main, delete branch, tag
+
+  ```bash
+  cd /Users/[removed]/projects/inky-keys && git add -A && git commit -q -F - <<'EOF'
+  Settings tabs, language globe, Type Case catch-up, topic names (2.31.0)
+
+  - Settings split into tabs: Language & keyboard, Look & sound, Help & hints
+  - Globe icon for language settings, and a language button on the main menu
+  - Picking a language offers its usual keyboard layout (suggestedLayout)
+  - Type Case: "Add all keys you already know" (catchUpKeys) and "Not now"
+  - Word lists lead with names, places and words not in the pack; skip
+    reference boilerplate, months, abbreviations and foreign letters
+  - Fair Cop
+  … (410 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The changes are committed as 2.31.0 (`e9bfebd`), merged into `main` and tagged `v2.31.0` locally. Nothing is pushed yet.
+
+- **Commit:** includes all six changes, the release notes in English, French and Spanish, the version bump, and the updated build transcripts.
+- **Transcripts:** I checked them for private details before committing. Personal paths are already redacted, and the only leftover is a cut-off temp folder path with no username in it.
+- **Branch:** merged into `main` and deleted.
+
+## 🧑 Prompt
+
+> Push both
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Push main and the release tag
+
+  ```bash
+  git push origin main 2>&1 | tail -2 && git push origin v2.31.0 2>&1 | tail -2
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Both are pushed: `main` is at `e9bfebd` on GitHub, and the `v2.31.0` tag is published.
+
+## 🧑 Prompt
+
+> The individual settings tabs change the position of the tab bar. Can we adjust it so that the settings menu is always the same height. And maybe a better indicator to show that there are more settings to scroll to. Doesn't need to be a scrollbar, but maybe an arrow bouncing at the bottom (and top once scrolled) would help.
+
+<details><summary>6 tool calls</summary>
+
+- **Shell:** Branch and check reduced-motion handling
+
+  ```bash
+  git checkout -q -b fix/settings-height && grep -rn "reduced\|prefers-reduced-motion" src/ui/*.css src/style.css | head -8; grep -n "const panel = h('div', { className: 'tc-panel st-panel' }" -A12 src/ui/settingsDialog.ts
+  ```
+- **Shell:** Read reduced-motion CSS pattern
+
+  ```bash
+  sed -n 68,82p src/ui/briefing.css; grep -n "\.tc-panel footer" -A8 src/ui/dialog.css
+  ```
+- **Shell:** Put tab panels in a fixed scroll box with arrows
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/ui/settingsDialog.ts'
+  s=open(p).read()
+  s=s.replace("""  const panel = h('div', { className: 'tc-panel st-panel' }, [
+      h('header', {}, [h('h2', { id: 'st-title' }, [t('settings.title')])]),
+      tabList,
+      ...panels.values(),
+      h('footer', {}, [""","""  // The tabs scroll inside a box of fixed height, so the tab bar never moves.
+    // Arrows at the top and bottom bob while there's more to scroll to.
+    const scroller = h('div', { className: 'st-scroll' }, [...panels.values()]);
+    const moreArrow = (dir: 'up' | 'down') =>
+      h('div', { className: `st-more st-more-${
+  … (1379 more characters)
+  ```
+- **Shell:** Add chevron arrows and fixed-height styles
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/ui/settingsDialog.ts'
+  s=open(p).read()
+  s=s.replace("""      dir === 'up' ? '⌃' : '⌄',
+      ]);""","""      chevron(dir),
+      ]);""")
+  s=s.replace("""  resize.observe(scroller);
+  ""","""  resize.observe(scroller);
+    // A tab's content can grow too (the layout hint), changing what's left to scroll.
+    for (const tabPanel of panels.values()) resize.observe(tabPanel);
+  """)
+  s=s.replace("""/** A legend with the globe before it""","""/** A down or up chevron, for the "more to scroll" arrows. */
+  function chevron(dir: 'up' | 'down'): SVGSVGElement {
+    const svg = document.createEle
+  … (1914 more characters)
+  ```
+- **Shell:** Make the top arrow bob upward
+
+  ```bash
+  grep -rn "dataset.motion\|data-motion" src --include=*.ts | head -3; python3 - <<'EOF'
+  p='src/ui/dialog.css'
+  s=open(p).read()
+  s=s.replace(""".st-more-up {
+    animation-direction: reverse;
+  }
+  """,""".st-more-up {
+    animation-name: st-bob-up;
+  }
+
+  @keyframes st-bob-up {
+    50% {
+      translate: 0 -4px;
+    }
+  }
+  """)
+  open(p,'w').write(s)
+  EOF
+  ```
+- **Shell:** Check reduced-motion attribute is set
+
+  ```bash
+  grep -rn "dataset.motion\|'data-motion'" src | head -3
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The settings dialog now has a fixed height, and its contents scroll inside it with bobbing arrows. Checking it in the browser.
+
+<details><summary>3 tool calls</summary>
+
+- **javascript_tool** `{"action":"javascript_exec","text":"location.reload(); await new Promise(r => setTimeout(r, 2500));\ninkling.openSettings('language'); await new Promise(r => setTimeout(r, 300));\nconst info = () => { const p = document.querySelector('.st-panel').getBoundingClientRect(); const t = document.querySele
+… (540 more characters)`
+- **javascript_tool** `{"action":"javascript_exec","text":"await new Promise(r => setTimeout(r, 1500));\ninkling.openSettings('language'); await new Promise(r => setTimeout(r, 300));\nconst info = () => { const p = document.querySelector('.st-panel').getBoundingClientRect(); const t = document.querySelector('.st-tabs').ge
+… (527 more characters)`
+- **computer** `{"action":"screenshot"}`
+
+</details>
+
+### 🤖 Claude
+
+Working: every tab has the same height and the tab bar stays put. The arrow sits on top of the text, though, so I'm adding a soft fade at the edge it's on.
+
+<details><summary>3 tool calls</summary>
+
+- **Shell:** Fade the scroll edges with more content
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/ui/settingsDialog.ts'
+  s=open(p).read()
+  s=s.replace("""    upArrow.hidden = scroller.scrollTop <= 2;
+      downArrow.hidden = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;""","""    upArrow.hidden = scroller.scrollTop <= 2;
+      downArrow.hidden = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+      // Fade the edge that has more beyond it.
+      scroller.classList.toggle('st-fade-top', !upArrow.hidden);
+      scroller.classList.toggle('st-fade-bottom', !downArrow.hidden);""")
+  open(p,'w').write(s)
+  p='src/ui/dialog.css'
+  s=open(
+  … (396 more characters)
+  ```
+- **javascript_tool** `{"action":"javascript_exec","text":"await new Promise(r => setTimeout(r, 1500));\nif (!document.querySelector('.st-panel')) { inkling.openSettings('look'); await new Promise(r => setTimeout(r, 300)); }\ndocument.querySelectorAll('[role=tab]')[1].click();\nconst s = document.querySelector('.st-scroll
+… (198 more characters)`
+- **computer** `{"action":"screenshot"}`
+
+</details>
+
+### 🤖 Claude
+
+Both arrows show mid-scroll, with the edges faded. Running the checks.
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Run checks and build
+
+  ```bash
+  npm run check 2>&1 | grep -E "Tests |error|✖" | head -5; npm run build 2>&1 | grep -iE "error|built in" | head -3
+  ```
+- **javascript_tool** `{"action":"javascript_exec","text":"document.querySelector('.settings .tc-primary')?.click(); 'closed'"}`
+
+</details>
+
+### 🤖 Claude
+
+The settings dialog is now the same height on every tab, so the tab bar no longer moves when you switch tabs. In the browser, all three tabs measured 720px tall, with the tab bar in the same place each time.
+
+- **Fixed height:** the dialog is 720px tall, or the window height minus a small margin on short screens. The header, tabs and Done button stay put, and only the settings below the tabs scroll.
+- **More-to-scroll arrows:** a round arrow bobs gently at the bottom while there are more settings below, and one appears at the top once you've scrolled down. Clicking an arrow scrolls most of a screen in that direction. With reduced motion turned on, the arrows stay still.
+- **Faded edges:** the edge with more beyond it fades out softly, so the arrow isn't sitting on sharp text. That's the bottom edge on Look & sound, and both edges once you've scrolled partway.
+- **Tab switching:** each tab opens scrolled to the top. The arrows also update when the keyboard-layout hint appears and makes the Language tab longer.
+
+`npm run check` and `npm run build` pass. The change is on `fix/settings-height` and isn't committed yet.
+
+## 🧑 Prompt
+
+> Commit and push
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Bump to 2.31.1, check, export transcript
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/core/releases.ts'
+  s=open(p).read()
+  s=s.replace("""export const RELEASES: readonly Release[] = [
+  ""","""export const RELEASES: readonly Release[] = [
+    {
+      version: '2.31.1',
+      date: '2026-11-24',
+      notes: [],
+      fixes: true,
+    },
+  """,1)
+  open(p,'w').write(s)
+  for p,n in (('package.json',1),('package-lock.json',2)):
+    s=open(p).read().replace('"version": "2.31.0"','"version": "2.31.1"',n); open(p,'w').write(s)
+  EOF
+  npm run check 2>&1 | grep -E "Tests |error" | head -3; npm run transcript 2>&1 | tail -1; git status --short
   ```
 
 </details>

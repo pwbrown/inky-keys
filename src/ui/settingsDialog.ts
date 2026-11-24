@@ -43,6 +43,14 @@ let lastTab: SettingsTab = 'language';
 /** A language just picked, carried over when the dialog reopens in it, for the layout hint. */
 let pickedLanguage: Language | null = null;
 
+/** A down or up chevron, for the "more to scroll" arrows. */
+function chevron(dir: 'up' | 'down'): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.innerHTML = `<path d="${dir === 'down' ? 'M6 9l6 6 6-6' : 'M6 15l6-6 6 6'}"/>`;
+  return svg;
+}
+
 /** A legend with the globe before it, so the language settings can be found in any menu language. */
 function globeLegend(text: string): HTMLLegendElement {
   const legend = h('legend', { className: 'st-globe-legend' });
@@ -330,6 +338,8 @@ export function openSettings(host: HTMLElement, options: SettingsDialogOptions):
       tab.tabIndex = on ? 0 : -1;
       panels.get(tabId)!.hidden = !on;
     }
+    scroller.scrollTop = 0;
+    updateArrows();
     if (focus) tabs.get(id)?.focus();
   }
 
@@ -344,10 +354,32 @@ export function openSettings(host: HTMLElement, options: SettingsDialogOptions):
     select(SETTINGS_TABS[next]!, true);
   });
 
+  // The tabs scroll inside a box of fixed height, so the tab bar never moves.
+  // Arrows at the top and bottom bob while there's more to scroll to.
+  const scroller = h('div', { className: 'st-scroll' }, [...panels.values()]);
+  const moreArrow = (dir: 'up' | 'down') =>
+    h('div', { className: `st-more st-more-${dir}`, 'aria-hidden': 'true', onClick: () => scroller.scrollBy({ top: (dir === 'up' ? -1 : 1) * scroller.clientHeight * 0.8, behavior: 'smooth' }) }, [
+      chevron(dir),
+    ]);
+  const upArrow = moreArrow('up');
+  const downArrow = moreArrow('down');
+  const updateArrows = () => {
+    upArrow.hidden = scroller.scrollTop <= 2;
+    downArrow.hidden = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+    // Fade the edge that has more beyond it.
+    scroller.classList.toggle('st-fade-top', !upArrow.hidden);
+    scroller.classList.toggle('st-fade-bottom', !downArrow.hidden);
+  };
+  scroller.addEventListener('scroll', updateArrows, { passive: true });
+  const resize = new ResizeObserver(updateArrows);
+  resize.observe(scroller);
+  // A tab's content can grow too (the layout hint), changing what's left to scroll.
+  for (const tabPanel of panels.values()) resize.observe(tabPanel);
+
   const panel = h('div', { className: 'tc-panel st-panel' }, [
     h('header', {}, [h('h2', { id: 'st-title' }, [t('settings.title')])]),
     tabList,
-    ...panels.values(),
+    h('div', { className: 'st-body' }, [scroller, upArrow, downArrow]),
     h('footer', {}, [
       h('div', { className: 'tc-actions' }, [
         h('button', { type: 'button', className: 'tc-primary', onClick: () => close() }, [t('settings.close')]),
@@ -368,6 +400,7 @@ export function openSettings(host: HTMLElement, options: SettingsDialogOptions):
   };
 
   function close() {
+    resize.disconnect();
     root.removeEventListener('keydown', onKeyDown);
     root.remove();
     previousFocus?.focus?.();

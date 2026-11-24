@@ -24,6 +24,12 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '2.31.1',
+    date: '2026-11-24',
+    notes: [],
+    fixes: true,
+  },
+  {
     version: '2.31.0',
     date: '2026-11-24',
     notes: ['release.2.31.0.settings', 'release.2.31.0.language', 'release.2.31.0.catchUp', 'release.2.31.0.topicWords'],
