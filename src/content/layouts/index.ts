@@ -4,6 +4,7 @@ import { DVORAK } from './dvorak';
 import { ES_ISO } from './es-iso';
 import { FR_AZERTY } from './fr-azerty';
 import type { KeyboardLayout, LayoutId, LayoutKey, Platform } from './types';
+import type { Language } from '../../core/languages';
 import { US_QWERTY } from './us-qwerty';
 
 export { charAt, deadKeyMark, findDeadKey, findKey, findKeyLevel, isDeadLevel } from './ansi';
@@ -11,6 +12,20 @@ export { charAt, deadKeyMark, findDeadKey, findKey, findKeyLevel, isDeadLevel } 
 export const LAYOUTS: readonly KeyboardLayout[] = [US_QWERTY, DVORAK, COLEMAK, FR_AZERTY, ES_ISO];
 
 export const LAYOUT_IDS: readonly LayoutId[] = LAYOUTS.map((l) => l.id);
+
+/** The layout most keyboards use for each words or menu language. */
+export const HOME_LAYOUTS: Readonly<Record<Language, LayoutId>> = { en: 'us-qwerty', fr: 'fr-azerty', es: 'es-iso' };
+
+/**
+ * The layout to suggest after switching to `lang`: its home layout, but only
+ * when the player is on another language's home layout (someone on Dvorak or
+ * Colemak chose it on purpose).
+ */
+export function suggestedLayout(lang: Language, current: LayoutId): LayoutId | null {
+  const home = HOME_LAYOUTS[lang];
+  if (home === current) return null;
+  return Object.values(HOME_LAYOUTS).includes(current) ? home : null;
+}
 
 /** New players start on US QWERTY. */
 export const DEFAULT_LAYOUT_ID: LayoutId = 'us-qwerty';

@@ -40,7 +40,7 @@ export const en = {
 
 
   'vocab.title': 'Word lists',
-  'vocab.intro': 'Practice with words about a topic you love. Inky Keys reads the Wikipedia article for it, picks the words that stand out, and mixes the ones your keys can type into word pages.',
+  'vocab.intro': 'Practice with words about a topic you love. Inky Keys reads the Wikipedia article for it, picks the words that stand out (names and places first), and mixes the ones your keys can type into word pages.',
   'vocab.privacy': 'Only the topic you type is sent, to Wikipedia ({site}). Lists are saved on this device and work offline.',
   'vocab.topic': 'Topic',
   'vocab.placeholder': 'e.g. ocean, cooking, space',
@@ -205,6 +205,9 @@ export const en = {
   'typeCase.legend': 'The bar under each key fills as you practice it. A gold edge means mastered.',
   'typeCase.suggest': 'You’ve mastered most of these keys. Ready to learn {keys}?',
   'typeCase.suggestAdd': 'Add them',
+  'typeCase.catchUp.one': 'Add the key you already know',
+  'typeCase.catchUp.other': 'Add all {count} keys you already know',
+  'typeCase.suggestLater': 'Not now',
   'mastery.unfamiliar': 'new',
   'mastery.practicing': 'practicing',
   'mastery.mastered': 'mastered',
@@ -443,6 +446,7 @@ export const en = {
   'menu.rank': '{rank} · Level {level} · {into} of {needed} ink to the next level',
   'menu.player': 'Writing as {name}',
   'menu.switchPlayer': 'Switch player',
+  'menu.language': 'Language: {language}',
   'menu.about': 'About',
 
   'players.title': 'Who’s writing?',
@@ -503,6 +507,10 @@ export const en = {
   'whatsNew.fixes': 'Bug fixes and small improvements.',
   'whatsNew.earlier': 'Earlier versions',
   'whatsNew.ok': 'Got it',
+  'release.2.31.0.settings': 'Settings are sorted into three tabs: Language & keyboard, Look & sound, and Help & hints.',
+  'release.2.31.0.language': 'A globe button on the main menu opens the language settings, and picking a language offers its usual keyboard.',
+  'release.2.31.0.catchUp': 'The Type Case can add every key you already know in one go, and its suggestion can wait with “Not now”.',
+  'release.2.31.0.topicWords': 'Word lists now lead with names, places and new words from the article: Star Wars gives jedi, skywalker and tatooine.',
   'release.2.30.0.spanish': '¡Hola! Inky Keys speaks Spanish: Spanish menus and words, Christmas words and Fair Copy passages.',
   'release.2.30.0.accents': 'Five Spanish Accents chapters teach ñ, á é, í ó ú, ü and the opening marks ¿ ¡, with the keys step by step.',
   'release.2.30.0.marks': 'With ¿ and ¡ selected, questions and exclamations open the Spanish way: ¿qué? ¡hola!',
@@ -837,6 +845,11 @@ export const en = {
   'settings.menuLanguage.help': 'The language of menus and messages on this device.',
   'settings.wordsLanguage': 'Words language',
   'settings.wordsLanguage.help': 'The language of the words you type. Each player chooses their own; it starts on the next page.',
+  'settings.tab.language': 'Language & keyboard',
+  'settings.tab.look': 'Look & sound',
+  'settings.tab.help': 'Help & hints',
+  'settings.layoutHint': 'Typing in {language}? Many keyboards for it use {layout}.',
+  'settings.layoutHint.switch': 'Switch to {layout}',
 
   // Accents (milestone 33): the key-steps card, help card and accent chapters.
   'accent.stepsLabel': 'To type {char}: {steps}',

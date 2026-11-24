@@ -80,7 +80,7 @@ import {
 } from './storage/progress';
 import { openBackend, SaveStore } from './storage/store';
 import { openSaveData } from './ui/saveData';
-import { openSettings } from './ui/settingsDialog';
+import { openSettings, type SettingsTab } from './ui/settingsDialog';
 import { openTypeCase, presetName } from './ui/typeCase';
 import { openBriefingDialog } from './ui/briefingDialog';
 import { openUnlockDialog, type UnlockedItem } from './ui/unlockDialog';
@@ -843,11 +843,12 @@ async function main(): Promise<void> {
     });
   };
 
-  const openSettingsDialog = () => {
+  const openSettingsDialog = (tab?: SettingsTab) => {
     if (dialogOpen || (game.phase !== 'ready' && game.phase !== 'paused')) return;
     dialogOpen = true;
     openSettings(document.body, {
       settings,
+      tab,
       onChange: (next) => {
         const redraw = next.theme !== settings.theme || next.textSize !== settings.textSize || next.motion !== settings.motion || next.screenEffects !== settings.screenEffects || next.pageWriting !== settings.pageWriting || next.holidayLooks !== settings.holidayLooks;
         const kindChanged = next.keyboardKind !== settings.keyboardKind;
@@ -1205,6 +1206,7 @@ async function main(): Promise<void> {
     onKeys: () => openKeys(),
     onWordLists: () => openVocab(),
     onSettings: () => openSettingsDialog(),
+    onLanguage: () => openSettingsDialog('language'),
     onSaveData: () => openSaves(),
     onResume: () =>
       after(() => {

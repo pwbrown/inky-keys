@@ -81,3 +81,24 @@ export function suggestNextKeys(
   const chosen = new Set(selection);
   return lessonOrder(layout).filter((key) => !chosen.has(key)).slice(0, m.suggestCount);
 }
+
+/**
+ * Catching up: while keys are being suggested, every key next in lesson order
+ * that the player already knows (practicing or mastered, from other pages),
+ * up to the first one that's new to them.
+ */
+export function catchUpKeys(
+  layout: KeyboardLayout,
+  selection: readonly string[],
+  stats: Readonly<Record<string, KeyCounts>>,
+): string[] {
+  if (suggestNextKeys(layout, selection, stats).length === 0) return [];
+  const chosen = new Set(selection);
+  const added: string[] = [];
+  for (const key of lessonOrder(layout)) {
+    if (chosen.has(key)) continue;
+    if (masteryLevel(stats[key]) === 'unfamiliar') break;
+    added.push(key);
+  }
+  return added;
+}

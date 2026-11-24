@@ -12,6 +12,7 @@ import type { Grade } from '../core/grade';
 import type { MechanicId } from '../core/mechanics';
 import { UNLOCKS, isUnlocked, type CosmeticSlot, type Cosmetics, type Unlock } from '../core/rewards';
 import { getLocale, t, type MessageKey } from '../i18n';
+import { LANGUAGE_NAMES } from '../core/languages';
 import { BADGES, MAX_NAME_LENGTH, type Badge } from '../storage/profiles';
 import { iconSvg, type IconId } from './icons';
 import { artElement, badgeSvg, cosmeticSvg, dayDropSvg, streakDropSvg } from './art';
@@ -179,6 +180,8 @@ export interface MenuHooks {
   onKeys(): void;
   onWordLists(): void;
   onSettings(): void;
+  /** Settings, open on the language tab. */
+  onLanguage(): void;
   onSaveData(): void;
   onResume(): void;
   onRestart(): void;
@@ -448,21 +451,36 @@ export class Menu {
     const cont = this.hooks.continueDetail();
     const best = this.hooks.bestLine(this.hooks.selectedDifficulty());
     const player = this.hooks.activePlayer();
+    const globe = h('span', { className: 'menu-language-globe', 'aria-hidden': 'true' });
+    globe.innerHTML = iconSvg('globe');
     return [
       h('header', { className: 'menu-header' }, [
         logo,
         h('h1', { id: 'menu-title', className: 'visually-hidden' }, ['Inky Keys']),
         h('p', { className: 'menu-tagline' }, [t('menu.tagline')]),
       ]),
-      h(
-        'button',
-        { type: 'button', className: 'menu-player', 'data-id': 'player', 'data-key': PLAYER_KEY, onClick: () => this.show('players') },
-        [
-          artElement(badgeSvg(player.badge), 'menu-player-badge'),
-          h('span', { className: 'menu-player-name' }, [t('menu.player', { name: player.name })]),
-          h('span', { className: 'menu-player-switch' }, [t('menu.switchPlayer'), ' ', h('kbd', { 'aria-hidden': 'true' }, [PLAYER_KEY.toUpperCase()])]),
-        ],
-      ),
+      h('div', { className: 'menu-chips' }, [
+        h(
+          'button',
+          { type: 'button', className: 'menu-player', 'data-id': 'player', 'data-key': PLAYER_KEY, onClick: () => this.show('players') },
+          [
+            artElement(badgeSvg(player.badge), 'menu-player-badge'),
+            h('span', { className: 'menu-player-name' }, [t('menu.player', { name: player.name })]),
+            h('span', { className: 'menu-player-switch' }, [t('menu.switchPlayer'), ' ', h('kbd', { 'aria-hidden': 'true' }, [PLAYER_KEY.toUpperCase()])]),
+          ],
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            className: 'menu-player menu-language',
+            'data-id': 'language',
+            'aria-label': t('menu.language', { language: LANGUAGE_NAMES[getLocale()] }),
+            onClick: () => this.hooks.onLanguage(),
+          },
+          [globe, h('span', { className: 'menu-player-name' }, [LANGUAGE_NAMES[getLocale()]])],
+        ),
+      ]),
       h('nav', { className: 'menu-tiles', 'aria-label': t('menu.nav') }, [
         cont ? this.tile('continue', 'full', t('menu.continue'), () => this.hooks.onContinue(), { detail: cont, key: t('menu.key.continue'), primary: true }) : null,
         this.tile('practice', 'half', t('menu.practice'), () => this.show('newNotebook'), {

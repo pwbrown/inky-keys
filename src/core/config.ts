@@ -562,6 +562,10 @@ export const GAME_CONFIG = {
     slowKeysShown: 3,
     /** The scribe cheers every this many correct keys in a row. */
     streakCheer: 30,
+    /** The passage's text size, in page pixels. */
+    fontSize: 26,
+    /** Letters sit this far above their ruled line, so the rule runs under them; only descenders (g, y) dip through it. */
+    baselineLift: 4,
   },
   /** The faint manuscript the scribe writes as a page goes on (src/render/manuscript.ts). */
   manuscript: {
@@ -629,8 +633,14 @@ export const GAME_CONFIG = {
     minCount: 2,
     /** From this tier on, a single appearance is enough (rare words are telling). */
     rareTier: 3,
-    /** A word capitalised at least this share of the time is taken for a name and dropped. */
+    /** A word capitalised at least this share of the time is taken for a name. */
     nameShare: 0.6,
+    /** How much an appearance of a name counts: above every tier, so "skywalker" and "tatooine" come first. */
+    nameWeight: 6,
+    /** How much an appearance of another word the pack doesn't have counts ("lightsaber"): like the rarest tier. */
+    newWeight: 4,
+    /** Names and new words must appear at least this often (one mention is often a passing reference). */
+    newMinCount: 2,
   },
 };
 

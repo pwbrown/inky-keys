@@ -375,6 +375,25 @@
   background: rgb(255 224 102 / 0.35);
 }
 
+.menu-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.menu .menu-language {
+  padding: 6px 14px 6px 10px;
+}
+
+.menu-language-globe {
+  display: inline-block;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  --ico-accent: var(--tc-margin);
+}
+
 .menu-player-badge {
   display: inline-block;
   flex: none;

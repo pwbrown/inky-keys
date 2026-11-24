@@ -18,7 +18,8 @@ export type IconId =
   | 'saves'
   | 'about'
   | 'margin'
-  | 'pageDone';
+  | 'pageDone'
+  | 'globe';
 
 const PATHS: Record<IconId, string> = {
   // A written page with a stopwatch: the typing-speed test.
@@ -51,6 +52,8 @@ const PATHS: Record<IconId, string> = {
   margin: '<rect x="5" y="4" width="22" height="24" rx="2"/><path d="M14 11h9M14 17h9M14 23h6"/><path class="ico-a" d="M10 4v24"/>',
   // A finished page with a tick.
   pageDone: '<path d="M8 4h12l5 5v19H8z"/><path d="M20 4v5h5"/><path class="ico-a" d="M11.5 18l3.5 3.5 6.5-7"/>',
+  // A globe: languages, without picking a country's flag.
+  globe: '<circle cx="16" cy="16" r="12"/><path d="M4.5 12h23M4.5 20h23"/><path class="ico-a" d="M16 4c-6 6.5-6 17.5 0 24M16 4c6 6.5 6 17.5 0 24"/>',
   // An "i" in a circle.
   about: '<circle cx="16" cy="16" r="12"/><path d="M16 14.5v8"/><path class="ico-a ico-dot" d="M16 9.5h.01"/>',
 };

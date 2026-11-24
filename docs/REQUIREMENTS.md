@@ -122,6 +122,7 @@ param = clamp(
 - The **player** starts it from settings, and only while online.
 - The request asks only for words. It sends no identifiers, cookies or player data.
 - Fetched words go through the same filters and are cached locally.
+- Words that say most about the topic come first: names, places and words the word pack doesn't have ("skywalker", "tatooine", "lightsaber"), when they appear at least twice and use only the words language's letters; then pack words frequent in the article for how rare they are. Reference boilerplate, months and abbreviations are skipped.
 - The game **never depends** on this feature.
 
 ---

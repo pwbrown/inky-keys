@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { APPRENTICE_CHAPTERS, SPACE_CHAPTER } from '../../core/campaign';
-import { COLEMAK, DVORAK, ES_ISO, FR_AZERTY, LAYOUTS, LAYOUT_IDS, US_QWERTY, deadKeyMark, findKey, findKeyLevel, forPlatform, isLayoutId, layoutById } from './index';
+import { COLEMAK, DVORAK, ES_ISO, FR_AZERTY, LAYOUTS, LAYOUT_IDS, US_QWERTY, deadKeyMark, findKey, findKeyLevel, forPlatform, isLayoutId, layoutById, suggestedLayout } from './index';
 import { KEY_LEVELS } from './types';
 import type { LayoutKey } from './types';
 
@@ -155,5 +155,18 @@ describe('layouts', () => {
     expect(COLEMAK.lessons[0]).toEqual(['t', 'n']);
     expect(FR_AZERTY.lessons[0]).toEqual(['f', 'j']);
     expect(ES_ISO.lessons.flat()).toContain('ñ');
+  });
+});
+
+describe('suggestedLayout', () => {
+  it('suggests the language’s usual layout from another language’s', () => {
+    expect(suggestedLayout('fr', 'us-qwerty')).toBe('fr-azerty');
+    expect(suggestedLayout('es', 'fr-azerty')).toBe('es-iso');
+    expect(suggestedLayout('en', 'es-iso')).toBe('us-qwerty');
+  });
+  it('says nothing when already there, or on Dvorak or Colemak', () => {
+    expect(suggestedLayout('fr', 'fr-azerty')).toBeNull();
+    expect(suggestedLayout('fr', 'dvorak')).toBeNull();
+    expect(suggestedLayout('es', 'colemak')).toBeNull();
   });
 });

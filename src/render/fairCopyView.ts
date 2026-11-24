@@ -48,14 +48,15 @@ export interface FairCopySetup {
   season: SeasonId | null;
 }
 
-const FONT_SIZE = 26;
+const FONT_SIZE = GAME_CONFIG.fairCopy.fontSize;
 const LEFT = MARGIN_X + GAME_CONFIG.manuscript.insetLeft;
 const RIGHT = WORLD_WIDTH - GAME_CONFIG.manuscript.insetRight;
 /** Text on every ruled line. */
 const TEXT_LINES = laneCount();
 /** While scrolling, the caret stays on this row, so the line before it stays in view. */
 const CARET_ROW = 1;
-const baselineOf = (row: number) => FIRST_LINE_Y + row * LINE_SPACING;
+/** Where the letters of visible row `row` stand: just above its ruled line. */
+const baselineOf = (row: number) => FIRST_LINE_Y + row * LINE_SPACING - GAME_CONFIG.fairCopy.baselineLift;
 const CARD_WIDTH = 620;
 const PAD = 32;
 /** The countdown turns red for the last few seconds. */
@@ -152,14 +153,13 @@ class LineView {
       const runX = x + measure(chars.slice(0, i).join(''));
       const fill = state === 'r' ? COLORS.ink : state === 'w' ? COLORS.margin : COLORS.inkFaded;
       const text = new Text({ text: run, style: textStyle(fill) });
-      // A touch lower than the font's ascent says, so letters sit on the rule.
-      text.position.set(runX, -this.ascent + 3);
+      text.position.set(runX, -this.ascent);
       this.root.addChild(text);
       if (state === 'w') {
         // Not by colour alone: a wavy underline, and the letters actually typed above.
         const x1 = runX + Math.max(measure(chars.slice(i, j).join('')), 8);
-        squiggle.moveTo(runX, 6);
-        for (let px = runX; px <= x1; px += 4) squiggle.lineTo(px, 6 + (Math.round((px - runX) / 4) % 2 ? 3 : 0));
+        squiggle.moveTo(runX, 5);
+        for (let px = runX; px <= x1; px += 4) squiggle.lineTo(px, 5 + (Math.round((px - runX) / 4) % 2 ? 3 : 0));
         const above = new Text({
           text: typed
             .slice(start + i, start + j)
@@ -168,7 +168,7 @@ class LineView {
           style: { fontFamily: TEXT_FONT, fontSize: 15, fontWeight: '700', fill: COLORS.margin },
         });
         above.anchor.set(0, 1);
-        above.position.set(runX, -this.ascent + 2);
+        above.position.set(runX, -this.ascent - 1);
         this.root.addChild(above);
       }
       i = j;

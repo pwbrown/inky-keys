@@ -17,8 +17,8 @@ import {
   toggleRegion,
   type Preset,
 } from '../core/keySelection';
-import { keyAccuracy, masteryLevel, masteryProgress, suggestNextKeys, type KeyCounts } from '../core/mastery';
-import { formatNumber, t, type MessageKey } from '../i18n';
+import { catchUpKeys, keyAccuracy, masteryLevel, masteryProgress, suggestNextKeys, type KeyCounts } from '../core/mastery';
+import { formatNumber, t, tCount, type MessageKey } from '../i18n';
 import { handsArt } from '../render/handsArt';
 import { artElement } from './art';
 import { h } from './dom';
@@ -136,6 +136,8 @@ export function openTypeCase(host: HTMLElement, options: TypeCaseOptions): TypeC
   };
 
   const suggestion = h('div', { className: 'tc-suggest', 'aria-live': 'polite' });
+  /** "Not now": no more suggestions until the Type Case opens again. */
+  let suggestionsOff = false;
 
   const keyboard = h(
     'div',
@@ -280,8 +282,12 @@ export function openTypeCase(host: HTMLElement, options: TypeCaseOptions): TypeC
     doneButton.disabled = keys.length === 0;
 
     // Apprentice path: suggest the next keys once these are mostly mastered.
-    const next = suggestNextKeys(layout, orderedSelection(layout, selection), options.keyStats);
+    const ordered = orderedSelection(layout, selection);
+    const next = suggestionsOff ? [] : suggestNextKeys(layout, ordered, options.keyStats);
+    // Keys already known from other pages can all go in at once.
+    const catchUp = next.length === 0 ? [] : catchUpKeys(layout, ordered, options.keyStats);
     suggestion.hidden = next.length === 0;
+    const hadFocus = suggestion.contains(document.activeElement);
     suggestion.replaceChildren(
       ...(next.length === 0
         ? []
@@ -298,11 +304,32 @@ export function openTypeCase(host: HTMLElement, options: TypeCaseOptions): TypeC
               'tc-hands',
             ),
             h('p', {}, [t('typeCase.suggest', { keys: next.map(capLabel).join(' + ') })]),
-            h('button', { type: 'button', className: 'tc-secondary', onClick: () => set(new Set([...selection, ...next])) }, [
-              t('typeCase.suggestAdd'),
+            h('div', { className: 'tc-suggest-actions' }, [
+              h('button', { type: 'button', className: 'tc-secondary', onClick: () => set(new Set([...selection, ...next])) }, [
+                t('typeCase.suggestAdd'),
+              ]),
+              catchUp.length > next.length
+                ? h('button', { type: 'button', className: 'tc-secondary', onClick: () => set(new Set([...selection, ...catchUp])) }, [
+                    tCount('typeCase.catchUp', catchUp.length),
+                  ])
+                : null,
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'tc-suggest-later',
+                  onClick: () => {
+                    suggestionsOff = true;
+                    refresh();
+                  },
+                },
+                [t('typeCase.suggestLater')],
+              ),
             ]),
           ]),
     );
+    // Keep focus in the box when it shows the next round, or move it on when it goes.
+    if (hadFocus) (suggestion.querySelector('button') ?? doneButton).focus();
   }
 
   // --- Keyboard -------------------------------------------------------------

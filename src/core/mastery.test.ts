@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GAME_CONFIG } from './config';
 import { US_QWERTY } from '../content/layouts';
-import { improvedKeys, lessonOrder, masteryLevel, masteryProgress, suggestNextKeys } from './mastery';
+import { catchUpKeys, improvedKeys, lessonOrder, masteryLevel, masteryProgress, suggestNextKeys } from './mastery';
 
 const m = GAME_CONFIG.mastery;
 const mastered = { hits: m.masteredHits, misses: 0 };
@@ -61,5 +61,26 @@ describe('suggestNextKeys', () => {
     const everything = lessonOrder(US_QWERTY);
     const stats = Object.fromEntries(everything.map((k) => [k, mastered]));
     expect(suggestNextKeys(US_QWERTY, everything, stats)).toEqual([]);
+  });
+});
+
+describe('catchUpKeys', () => {
+  const home = [...'asdfghjkl;'];
+  const order = lessonOrder(US_QWERTY).filter((k) => !home.includes(k));
+
+  it('adds every known key next in lesson order, up to the first new one', () => {
+    const known = order.slice(0, 7);
+    const stats = Object.fromEntries([...home.map((k) => [k, mastered]), ...known.map((k) => [k, practicing])]);
+    expect(catchUpKeys(US_QWERTY, home, stats)).toEqual(known);
+  });
+
+  it('adds nothing while no keys are suggested', () => {
+    const stats = Object.fromEntries([...home.map((k) => [k, practicing]), ...order.map((k) => [k, mastered])]);
+    expect(catchUpKeys(US_QWERTY, home, stats)).toEqual([]);
+  });
+
+  it('adds nothing when the next key is new', () => {
+    const stats = Object.fromEntries(home.map((k) => [k, mastered]));
+    expect(catchUpKeys(US_QWERTY, home, stats)).toEqual([]);
   });
 });
