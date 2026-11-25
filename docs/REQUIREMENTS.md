@@ -159,7 +159,7 @@ param = clamp(
 ## 9. Privacy (Hard Requirement)
 
 - **No** analytics, telemetry, crash reporting, ads, tracking pixels or third-party scripts.
-- **No** network requests except the optional vocabulary fetch the player starts (§6).
+- **No** network requests except the optional vocabulary fetch the player starts (§6). Playing together (§13e) connects devices on the local network directly, with no internet servers.
 - Per-key accuracy stats exist only for in-game adaptation and display, and **never leave the device**.
 - A strict **Content Security Policy** is enforced.
 - When hosted, the host's own access logs are disclosed in a privacy note (§12).
@@ -326,6 +326,18 @@ Milestone 31 was Fair Copy (2.23.0–2.27.0). French and Spanish come in three m
 - **Translations** are drafted by Claude and reviewed by a native speaker before each language is released. Menus are checked at phone width, since French and Spanish run about a quarter longer than English. The bundled fonts are checked for `ç`, `ñ`, `¿`, `¡`, `€` and accented capitals.
 - **Pages** are copied to `site/fr/` and `site/es/` (with Privacy and an accent help page), linked with `hreflang` and listed in `sitemap.xml`.
 
+## 13e. Round 5 milestones (playing together)
+
+Players race and defend together, each on their own device, **without a server**. Browsers connect directly with **WebRTC on the local network**. There are no ICE servers (no STUN or TURN), so the only addresses offered are the devices' own (hidden behind `.local` mDNS names), and nothing goes to the internet. A web page can't search the network for other players, so they swap a short **handshake code** instead: the host's offer, then the joiner's answer. The game cuts the browser's handshake (600–1,500 characters) down to what changes each time (the DTLS fingerprint, ICE username and password, setup role, and the local address and port), about 80 bytes or 110–130 characters. That's too long to type, so it travels as a **link**, a **pasted code**, or as **sound**: the laptops chirp it to each other through speaker and microphone. There's no webcam pairing, since tilting a laptop toward another's camera is awkward.
+
+Home Wi-Fi comes first. Some networks keep devices apart (often at schools), and WebRTC can't get past that without a relay, so the game says plainly that it can't reach the other player. The host runs each game (star topology, 2–4 players). Browsers can't tell one keyboard from another, so everyone plays on their own device.
+
+| # | Milestone | Scope |
+|---|---|---|
+| 35 | **Connections** | WebRTC with no ICE servers, compact handshake codes (`src/core/net/handshake.ts`), join links (`#join=`), pasting, and sound pairing (our own FSK modem in TypeScript; ggwave's WASM would need `'wasm-unsafe-eval'` in the CSP). A **Play together** lobby for 2–4 players with names and ink drops. A version handshake asks players to update when their copies differ. Starts with a spike on real laptops (Chrome, Safari, Firefox) |
+| 36 | **Ink Race** | A Fair Copy passage raced live, in the style of TypeRacer. The host picks the passage and starts a countdown on clocks lined up by ping. Each player types with Fair Copy's own rules and sends their progress; every player's nib moves down the page, and the host announces the finishing order. A player who drops out shows as "left" |
+| 37+ | **Inkwell Watch** (working name) | Co-op defense, inspired by *Lovers in a Dangerous Spacetime*. A central inkwell that doesn't move has four sides (north, east, south, west), and each side covers a cone. Each player stands at one side; **Tab** moves to the next free side. Creatures come from every direction, so players move to where they're needed. 1–4 players over milestone 35's connections, or solo offline (Tab switches sides). To be designed in its own milestone |
+
 ## 14. Open Questions / TODO
 
 - [x] **Theme, art direction and audio.** See [DESIGN.md](DESIGN.md) (Inkwell direction). Name: **Inky Keys**.
@@ -341,4 +353,5 @@ Milestone 31 was Fair Copy (2.23.0–2.27.0). French and Spanish come in three m
 - [x] Vocabulary API: Wikipedia (`en.wikipedia.org/w/api.php`, search + plain-text extract). No key, CORS via `origin=*`, sends only the topic; words are picked on the device. Replaced Datamuse in 2.15.0, which needs an API key from February 2027. See PRIVACY.md.
 - [ ] Confirm the code license (MIT vs GPL-3.0) and the art/audio license.
 - [ ] Pick the public repo/site name (§12). Host: GitHub Pages via `.github/workflows/deploy.yml` (any static host works).
+- [ ] Playing together (milestone 35 spike): do `.local` mDNS candidates connect between Chrome, Safari and Firefox on a home network with no ICE servers? How long does sound pairing take for a code, and how often does it fail on laptop speakers, in a quiet room and with talking nearby? If sound isn't reliable, milestone 35 ships links and pasting, and sound waits.
 - [x] An endless or practice mode alongside the campaign? Yes: Free Write (formerly Practice), listed first since milestone 17.

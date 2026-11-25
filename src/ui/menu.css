@@ -872,7 +872,16 @@
 }
 
 .menu-tile-small {
-  grid-column: span 3;
+  grid-column: span 2;
+}
+
+.menu .menu-tile .menu-tile-beta {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  margin: 0;
+  border: 1.5px solid var(--tc-ink);
+  font-size: 10px;
 }
 
 /* Big tiles: icon on the left; the Continue and Apprentice rows get a larger one. */
@@ -920,7 +929,8 @@
 
 .menu .menu-tile-small {
   flex-direction: row;
-  padding: 8px 10px;
+  /* Room on both sides for the shortcut key in the corner, so a long label stays clear of it. */
+  padding: 8px 26px;
 }
 
 .menu-tile-third .menu-tile-icon,

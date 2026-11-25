@@ -1,6 +1,6 @@
 # Settings menu improvements
 
-Claude Code session started 2026-11-24. 7 prompts.
+Claude Code session started 2026-11-24. 8 prompts.
 
 Exported with `npm run transcript`. Tool output, hidden reasoning and system prompts are left out; commands are cut short when long. Private details (email, home folder) are removed.
 
@@ -1329,7 +1329,7 @@ The settings dialog is now the same height on every tab, so the tab bar no longe
 
 > Commit and push
 
-<details><summary>1 tool call</summary>
+<details><summary>2 tool calls</summary>
 
 - **Shell:** Bump to 2.31.1, check, export transcript
 
@@ -1352,5 +1352,83 @@ The settings dialog is now the same height on every tab, so the tab bar no longe
   EOF
   npm run check 2>&1 | grep -E "Tests |error" | head -3; npm run transcript 2>&1 | tail -1; git status --short
   ```
+- **Shell:** Scan new transcript lines for private details
+
+  ```bash
+  f=docs/transcripts/2026-11-24-settings-menu-improvements-daa75f17.md; git diff -U0 -- "$f" | grep '^+' > <temp file> A=<temp file> grep -noE "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}" $A | sort -u | head; grep -noE "/Users/[^ /]+" $A | sort -u | head; grep -niE "sk-[A-Za-z0-9]{10,}|gh[pousr]_[A-Za-z0-9]{10,}|(token|secret|password)[\"' :=]+[A-Za-z0-9_-]{12,}" $A | head; echo s
+  … (6 more characters)
+  ```
 
 </details>
+
+### 🤖 Claude
+
+The transcript is clean. Committing and pushing.
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Commit, merge, tag and push 2.31.1
+
+  ```bash
+  git add -A && git commit -q -F - <<'EOF'
+  Settings keep one height, with arrows for more (2.31.1)
+
+  - Settings dialog is a fixed height; each tab scrolls inside it, so the tab bar never moves
+  - Bobbing arrows at the bottom (and top once scrolled) show there's more, with faded edges; clicking scrolls
+  - Arrows stay still with reduced motion
+  - 2.31.1 bug-fix release; transcript
+
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+  EOF
+  git checkout -q main && git merge --ff-only fix/settings-height 2>&1 | tail -1 && git branch -d fix/settings-height && npm run release:tag 2>&1 | grep Tagged && gi
+  … (75 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The settings height fix is pushed as 2.31.1: `main` is at `7b7e2fd`, and the `v2.31.1` tag is published.
+
+Players will see it in the release notes as "Bug fixes and small improvements", since it has no notes of its own. The branch is merged and deleted.
+
+## 🧑 Prompt
+
+> run the snapshots for latest
+
+<details><summary>6 tool calls</summary>
+
+- **Shell:** Run the snapshot tour into latest
+
+  ```bash
+  git checkout -q -b chore/snapshots-latest && npm run snapshots -- latest 2>&1 | tail -15
+  ```
+- **Shell:** See which snapshots changed
+
+  ```bash
+  git status --short | head -40; git status --short | wc -l
+  ```
+- **Read** `docs/progression/latest/settings-layout.png`
+- **Shell:** Find settings and Fair Copy shots
+
+  ```bash
+  ls docs/progression/latest | grep -i "fair\|setting"; grep -n "settings-layout\|'settings'" scripts/snapshots.ts | head
+  ```
+- **Shell:** Check layout shot helper and README notes on latest
+
+  ```bash
+  grep -n "SHOW_LAYOUT =" -A4 scripts/snapshots.ts; grep -n "latest" docs/progression/README.md | head
+  ```
+- **Read** `docs/progression/latest/menu.png`
+
+</details>
+
+### 🤖 Claude
+
+I ran the snapshots into `docs/progression/latest`, and 43 images changed.
+
+- **Main menu:** shows the new globe pill with "English" next to the player button.
+- **Settings:** shows the tabs. The layout shot shows the Language & keyboard tab with Dvorak picked.
+- **Everything else:** refreshed to match the current build.
+
+The snapshot tour doesn't capture Fair Copy, so the lines fix isn't in the gallery. The `README` doesn't need changes, because it already points at the `latest` images. The new snapshots are on `chore/snapshots-latest` and aren't committed yet.

@@ -183,6 +183,8 @@ export interface MenuHooks {
   /** Settings, open on the language tab. */
   onLanguage(): void;
   onSaveData(): void;
+  /** Open Play together (host or join a game on the same network). */
+  onPlayTogether(): void;
   onResume(): void;
   onRestart(): void;
   onQuit(): void;
@@ -420,7 +422,7 @@ export class Menu {
     size: 'full' | 'half' | 'third' | 'small',
     label: string,
     onClick: () => void,
-    opts: { icon?: IconId; detail?: string | null; key: string; primary?: boolean },
+    opts: { icon?: IconId; detail?: string | null; key: string; primary?: boolean; beta?: boolean },
   ) {
     const icon = h('span', { className: 'menu-tile-icon' });
     icon.innerHTML = iconSvg(opts.icon ?? (id as IconId));
@@ -441,6 +443,8 @@ export class Menu {
           opts.detail ? h('span', { className: 'menu-detail' }, [opts.detail]) : null,
         ]),
         h('kbd', { className: 'menu-key', 'aria-hidden': 'true' }, [opts.key.toUpperCase()]),
+        // On the tile's top edge, like a sticker, so it never squeezes the label.
+        opts.beta ? h('span', { className: 'beta-badge menu-tile-beta' }, [t('together.beta')]) : null,
       ],
     );
   }
@@ -500,6 +504,7 @@ export class Menu {
         this.tile('words', 'third', t('menu.wordLists'), () => this.hooks.onWordLists(), { key: t('menu.key.wordLists') }),
         this.tile('how', 'third', t('menu.howToPlay'), () => this.show('howToPlay'), { key: t('menu.key.howToPlay') }),
         this.tile('settings', 'third', t('menu.settings'), () => this.hooks.onSettings(), { key: t('menu.key.settings') }),
+        this.tile('together', 'small', t('menu.together'), () => this.hooks.onPlayTogether(), { key: t('menu.key.together'), beta: true }),
         this.tile('saves', 'small', t('menu.saveData'), () => this.hooks.onSaveData(), { key: t('menu.key.saveData') }),
         this.tile('about', 'small', t('menu.about'), () => this.show('about'), { key: t('menu.key.about') }),
       ]),

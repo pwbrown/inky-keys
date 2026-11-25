@@ -19,7 +19,8 @@ export type IconId =
   | 'about'
   | 'margin'
   | 'pageDone'
-  | 'globe';
+  | 'globe'
+  | 'together';
 
 const PATHS: Record<IconId, string> = {
   // A written page with a stopwatch: the typing-speed test.
@@ -55,6 +56,9 @@ const PATHS: Record<IconId, string> = {
   // A globe: languages, without picking a country's flag.
   globe: '<circle cx="16" cy="16" r="12"/><path d="M4.5 12h23M4.5 20h23"/><path class="ico-a" d="M16 4c-6 6.5-6 17.5 0 24M16 4c6 6.5 6 17.5 0 24"/>',
   // An "i" in a circle.
+  // Two ink drops joined by a dotted line: playing together.
+  together:
+    '<path d="M9 5c-3.5 5-5.5 8-5.5 11a5.5 5.5 0 0 0 11 0C14.5 13 12.5 10 9 5z"/><path d="M23 11c-3 4.2-4.6 6.7-4.6 9.3a4.6 4.6 0 0 0 9.2 0c0-2.6-1.6-5.1-4.6-9.3z"/><path class="ico-a" stroke-dasharray="1.5 2.5" d="M8 25c3 3 9 4 13 1"/>',
   about: '<circle cx="16" cy="16" r="12"/><path d="M16 14.5v8"/><path class="ico-a ico-dot" d="M16 9.5h.01"/>',
 };
 

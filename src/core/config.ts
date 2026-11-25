@@ -567,6 +567,37 @@ export const GAME_CONFIG = {
     /** Letters sit this far above their ruled line, so the rule runs under them; only descenders (g, y) dip through it. */
     baselineLift: 4,
   },
+  /** Playing together over the local network (src/core/net/, src/net/; REQUIREMENTS §13e). */
+  net: {
+    /** Players in one game, the host included. */
+    maxPlayers: 4,
+    /** Local addresses kept in a handshake code. Each costs about 25 characters; two covers IPv4 and IPv6. */
+    maxCandidates: 2,
+    /** Give up gathering local addresses after this long (some browsers wait for interfaces that never answer). */
+    gatherTimeoutMs: 3000,
+    /** A connection that hasn't opened this long after both codes are in is reported as unreachable. */
+    connectTimeoutMs: 15000,
+    /** A joiner waits this long for the host to enter their code. */
+    answerWaitMs: 10 * 60 * 1000,
+    /** The host checks each player this often (and lines up clocks for countdowns). */
+    pingIntervalMs: 2000,
+    /** A player not heard from for this long has left. */
+    silentTimeoutMs: 8000,
+    /** Sound pairing (src/core/net/modem.ts): each symbol is one byte as two tones, one per band. */
+    sound: {
+      symbolMs: 40,
+      /** The two bands' lowest tones; each band has 16 tones `toneSpacingHz` apart. Laptop speakers and mics do well here. */
+      bandHz: [1800, 2800],
+      toneSpacingHz: 50,
+      /** Each tone's loudness, 0..1 (two play at once). */
+      amplitude: 0.35,
+      /** A code is played this many times, with a pause between, so a listener can catch any copy. */
+      repeats: 3,
+      gapMs: 600,
+      /** A symbol counts as heard when its loudest tone holds at least this share of its band's energy. */
+      minDominance: 0.35,
+    },
+  },
   /** The faint manuscript the scribe writes as a page goes on (src/render/manuscript.ts). */
   manuscript: {
     /** How strong the scribbles are, 0..1. Faint, so they never compete with targets. */

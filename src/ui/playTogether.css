@@ -1,0 +1,114 @@
+/* Play together (src/ui/playTogether.ts). */
+.pt-panel {
+  width: min(620px, 100%);
+}
+
+.pt-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.pt-choice {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  text-align: left;
+}
+
+.pt-choice span {
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.pt-privacy {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.pt-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 6px;
+  font-size: 17px;
+}
+
+.pt-step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--tc-ink);
+  color: var(--tc-paper);
+  font-size: 14px;
+}
+
+.pt-code {
+  display: block;
+  padding: 8px 10px;
+  border: 2px dashed var(--tc-ink);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-all;
+  user-select: all;
+}
+
+.pt-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.pt-receive {
+  flex-wrap: wrap;
+}
+
+.pt-paste {
+  flex: 1 1 240px;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+}
+
+.pt-lobby {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pt-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 2px solid var(--tc-ink);
+  border-radius: 10px;
+}
+
+.pt-badge {
+  width: 26px;
+  height: 26px;
+}
+
+.pt-name {
+  font-weight: bold;
+}
+
+.pt-note,
+.pt-rtt {
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.pt-rtt {
+  margin-left: auto;
+}
+
+.pt-status:empty {
+  display: none;
+}

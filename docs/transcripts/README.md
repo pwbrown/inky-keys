@@ -27,3 +27,4 @@ Each file is exported from the session log with `npm run transcript` (see `scrip
 - [2026-11-21-milestone-33-fran-ais-ae73be3f](2026-11-21-milestone-33-fran-ais-ae73be3f.md)
 - [2026-11-22-milestone-34-espa-ol-7b438fff](2026-11-22-milestone-34-espa-ol-7b438fff.md)
 - [2026-11-24-settings-menu-improvements-daa75f17](2026-11-24-settings-menu-improvements-daa75f17.md)
+- [2026-11-25-multiplayer-support-planning-e203a3da](2026-11-25-multiplayer-support-planning-e203a3da.md)

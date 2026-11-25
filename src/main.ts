@@ -85,6 +85,8 @@ import { openTypeCase, presetName } from './ui/typeCase';
 import { openBriefingDialog } from './ui/briefingDialog';
 import { openUnlockDialog, type UnlockedItem } from './ui/unlockDialog';
 import { openWordLists } from './ui/wordLists';
+import { openPlayTogether } from './ui/playTogether';
+import { relayAnswer } from './net/answerRelay';
 import { openWhatsNewDialog } from './ui/whatsNewDialog';
 import { showStickerToast } from './ui/stickerToast';
 import { hideWordsNote, showWordsNote } from './ui/wordsNote';
@@ -686,10 +688,24 @@ async function main(): Promise<void> {
     if (game.phase === 'ready' && !dialogOpen) menu.show('transfer');
   };
 
-  /** Links someone opened: a challenge or a transfer. */
+  /**
+   * Play together links: a host's invite (#join=…) opens joining; a reply
+   * (#answer=…) goes to the tab that's hosting, if there is one.
+   */
+  const readTogether = async () => {
+    const match = /^#(join|answer)=([A-Za-z0-9_-]+)$/.exec(location.hash);
+    if (!match) return;
+    history.replaceState(null, '', `${location.pathname}${location.search}`);
+    const [, kind, code = ''] = match;
+    if (kind === 'join') return openTogether({ joinCode: code });
+    openTogether({ strayAnswer: code, answerRelayed: await relayAnswer(code) });
+  };
+
+  /** Links someone opened: a challenge, a transfer, or Play together. */
   const readLinks = () => {
     readChallenge();
     void readTransfer();
+    void readTogether();
   };
 
   /** The link that moves the active player to another device. */
@@ -771,6 +787,28 @@ async function main(): Promise<void> {
       },
     });
   });
+
+  /** Play together (REQUIREMENTS §13e). Names from other devices go through the word filter, so it waits for the word pack. */
+  const openTogether = (link: { joinCode?: string; strayAnswer?: string; answerRelayed?: boolean } = {}) => {
+    if (dialogOpen || game.phase !== 'ready') return;
+    dialogOpen = true;
+    void packReady().then(({ blocklist }) => {
+      openPlayTogether(document.body, {
+        me: { name: players.active.name, badge: players.active.badge },
+        app: APP_VERSION,
+        nameFor: (sent, seat) => {
+          const name = cleanChallengeName(sent);
+          return name && !blocklist.blocksString(name) ? name : t('together.playerN', { n: seat });
+        },
+        linkFor: (kind, code) => `${location.origin}${location.pathname}#${kind}=${code}`,
+        ...link,
+        onClose: () => {
+          dialogOpen = false;
+          menu.refresh();
+        },
+      });
+    });
+  };
 
   const openSaves = () => {
     if (dialogOpen || game.phase !== 'ready') return;
@@ -1208,6 +1246,7 @@ async function main(): Promise<void> {
     onSettings: () => openSettingsDialog(),
     onLanguage: () => openSettingsDialog('language'),
     onSaveData: () => openSaves(),
+    onPlayTogether: () => openTogether(),
     onResume: () =>
       after(() => {
         if (game.phase === 'paused') togglePause(game);
