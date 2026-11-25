@@ -46,7 +46,16 @@ export interface FairCopySetup {
   /** Dressed like the game's page. */
   cosmetics: Cosmetics;
   season: SeasonId | null;
+  /**
+   * Ink Race (M36): the passage starts two ruled lines down, under the race
+   * track (render/raceView.ts), with no heading, typing hints or result card;
+   * the race draws its own.
+   */
+  race?: boolean;
 }
+
+/** Ruled lines a race leaves empty above the passage, for the track. */
+export const RACE_TOP_ROWS = 2;
 
 const FONT_SIZE = GAME_CONFIG.fairCopy.fontSize;
 const LEFT = MARGIN_X + GAME_CONFIG.manuscript.insetLeft;
@@ -209,6 +218,8 @@ export class FairCopyView {
   private stamp: Text | null = null;
   private sourceSpan: PassageSpan | null = null;
   private record: FairCopyRecord | null = null;
+  /** Ruled lines left empty above the text (the race track's room). */
+  private readonly topRows: number;
 
   constructor(
     text: string,
@@ -217,6 +228,7 @@ export class FairCopyView {
     private readonly actions: FairCopyActions,
   ) {
     this.ascent = CanvasTextMetrics.measureText('Hg', MEASURE).fontProperties.ascent;
+    this.topRows = setup.race ? RACE_TOP_ROWS : 0;
     this.root.addChild(drawPage(setup.cosmetics.paper));
     this.decor = new SeasonDecor(setup.season, reducedMotion);
     this.root.addChild(this.decor.root);
@@ -232,10 +244,11 @@ export class FairCopyView {
     this.source.anchor.set(0, 1);
     this.source.position.set(this.heading.x + this.heading.width + 8, this.heading.y - 6);
     this.root.addChild(this.heading, this.source);
+    this.heading.visible = this.source.visible = !setup.race;
 
     const textLayer = new Container();
     const wrapped = wrap(text, setup.spans);
-    if (setup.seconds === null && wrapped.length > TEXT_LINES) console.warn(`Fair Copy: the passage needs ${wrapped.length} lines; the page has ${TEXT_LINES}.`);
+    if (setup.seconds === null && wrapped.length > TEXT_LINES - this.topRows) console.warn(`Fair Copy: the passage needs ${wrapped.length} lines; the page has ${TEXT_LINES - this.topRows}.`);
     for (const line of wrapped) {
       const view = new LineView(line, this.ascent);
       this.lines.push(view);
@@ -337,17 +350,18 @@ export class FairCopyView {
       this.syncHud(test, now);
     }
 
-    if (finished) this.showResult(fairCopyResult(test, now), frameMs);
+    if (finished && !this.setup.race) this.showResult(fairCopyResult(test, now), frameMs);
   }
 
   /** Keep the caret's line on the page: a passage never moves, a timed test scrolls. */
   private scroll(index: number): void {
     const caretLine = this.lineIndexOf(index);
-    const max = Math.max(0, this.lines.length - TEXT_LINES);
+    const rows = TEXT_LINES - this.topRows;
+    const max = Math.max(0, this.lines.length - rows);
     this.firstLine = this.setup.seconds === null ? 0 : Math.min(max, Math.max(0, caretLine - CARET_ROW));
     this.lines.forEach((line, i) => {
       const row = i - this.firstLine;
-      line.place(row >= 0 && row < TEXT_LINES ? row : null);
+      line.place(row >= 0 && row < rows ? row + this.topRows : null);
     });
   }
 
@@ -369,14 +383,14 @@ export class FairCopyView {
       ? t('fairCopy.hudLeft', { accuracy: formatNumber(Math.round(live.accuracy * 100)), streak: formatNumber(test.streak) })
       : '';
     const seconds = this.setup.seconds;
-    this.footer.text = test.finishedAt !== null ? '' : started ? t('fairCopy.footer') : seconds === null ? t('fairCopy.hint') : t('fairCopy.hintTimed', { seconds });
+    this.footer.text = test.finishedAt !== null || this.setup.race ? '' : started ? t('fairCopy.footer') : seconds === null ? t('fairCopy.hint') : t('fairCopy.hintTimed', { seconds });
   }
 
   /** Baseline position of the caret. */
   private caretSpot(test: FairCopy): [number, number] {
     const index = Math.min([...test.buffer].length, [...test.text].length);
     const i = this.lineIndexOf(index);
-    return [this.lines[i]?.caretX(index) ?? LEFT, baselineOf(i - this.firstLine)];
+    return [this.lines[i]?.caretX(index) ?? LEFT, baselineOf(i - this.firstLine + this.topRows)];
   }
 
   private lineIndexOf(index: number): number {
@@ -387,7 +401,7 @@ export class FairCopyView {
   /** Where the scribe stands for the caret before `index`: in the margin, on the caret's line, quill towards the text. */
   private scribeSpot(index: number): [number, number] {
     const i = this.lineIndexOf(index);
-    return [MARGIN_X - 44, baselineOf(i - this.firstLine) + 4];
+    return [MARGIN_X - 44, baselineOf(i - this.firstLine + this.topRows) + 4];
   }
 
   /** "Press Enter" by the break at the end of the caret's line, if there is one there. */

@@ -65,3 +65,30 @@ describe('lobby', () => {
     expect(setRtt(lobby, 'p1', 12.6).players[1]!.rttMs).toBe(13);
   });
 });
+
+describe('race messages', () => {
+  const racers = [
+    { id: 'host', at: 120, result: { ms: 30000, netWpm: 48, accuracy: 0.97, errors: 2 }, left: false },
+    { id: 'p1', at: 64, result: null, left: false },
+  ];
+
+  it('round-trips', () => {
+    const race = { t: 'race' as const, passageId: 'austen-pride', lang: 'en' as const, startAt: 123456.5, ids: ['host', 'p1'] };
+    expect(readHostMessage(writeMessage(race))).toEqual(race);
+    expect(readHostMessage(writeMessage({ t: 'standings', racers, over: false }))).toEqual({ t: 'standings', racers, over: false });
+    expect(readHostMessage(writeMessage({ t: 'toLobby' }))).toEqual({ t: 'toLobby' });
+    expect(readGuestMessage(writeMessage({ t: 'progress', at: 12 }))).toEqual({ t: 'progress', at: 12 });
+    expect(readGuestMessage(writeMessage({ t: 'finish', result: racers[0]!.result! }))).toEqual({ t: 'finish', result: racers[0]!.result });
+    expect(readGuestMessage(writeMessage({ t: 'leaveRace' }))).toEqual({ t: 'leaveRace' });
+  });
+
+  it('rejects unknown passages, languages and odd results', () => {
+    const race = (over: object) => JSON.stringify({ t: 'race', passageId: 'austen-pride', lang: 'en', startAt: 1, ids: ['host'], ...over });
+    expect(readHostMessage(race({ passageId: 'not-a-book' }))).toBeNull();
+    expect(readHostMessage(race({ lang: 'de' }))).toBeNull();
+    expect(readHostMessage(race({ ids: [] }))).toBeNull();
+    expect(readGuestMessage(JSON.stringify({ t: 'finish', result: { ms: 1, netWpm: 40, accuracy: 1.5, errors: 0 } }))).toBeNull();
+    expect(readGuestMessage(JSON.stringify({ t: 'progress', at: -3 }))).toBeNull();
+    expect(readHostMessage(JSON.stringify({ t: 'standings', racers: [{ id: 'p1', at: 1, result: { ms: 'fast' }, left: false }], over: true }))).toBeNull();
+  });
+});

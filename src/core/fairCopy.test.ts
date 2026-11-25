@@ -5,6 +5,7 @@ import {
   PassageDeck,
   backspace,
   chainPassages,
+  correctPrefix,
   createFairCopy,
   drawPassages,
   elapsedMs,
@@ -157,5 +158,53 @@ describe('Fair Copy', () => {
       // Old spellings: "á" as a word, "fué", "dió"...
       expect(p.text, p.id).not.toMatch(/(^|[^\p{L}])(á|é|ó|fué|fuí|dió|vió)(?![\p{L}])/u);
     }
+  });
+});
+
+describe('Ink Race rules (mustFix, forgiving)', () => {
+  const type = (test: ReturnType<typeof createFairCopy>, keys: string) => {
+    let now = 1000;
+    const events: string[] = [];
+    for (const k of keys) events.push(...(k === '\b' ? backspace(test, (now += 100)) : typeKey(test, k, (now += 100))));
+    return events;
+  };
+
+  it('lets a few wrong keys land, then blocks until Backspace', () => {
+    const test = createFairCopy('abcdefghij', null, { mustFix: true });
+    type(test, 'abX');
+    expect(correctPrefix(test)).toBe(2);
+    // X plus four more: maxWrong (5) keys after the first mistake's position.
+    type(test, 'defg');
+    expect(test.buffer).toBe('abXdefg');
+    expect(type(test, 'h')).toEqual(['blocked']);
+    expect(test.buffer).toBe('abXdefg');
+    type(test, '\b\b\b\b\bc');
+    expect(test.buffer).toBe('abc');
+    expect(correctPrefix(test)).toBe(3);
+  });
+
+  it('only finishes once every character is right', () => {
+    const test = createFairCopy('cat', null, { mustFix: true });
+    expect(type(test, 'caX')).not.toContain('finished');
+    expect(isFinished(test)).toBe(false);
+    expect(type(test, 'z')).toEqual(['blocked']);
+    expect(type(test, '\bt')).toContain('finished');
+    expect(fairCopyResult(test, 2000).mistakesLeft).toBe(0);
+  });
+
+  it('counts a plain letter for an accented one when forgiving', () => {
+    const strict = createFairCopy('café', null, { mustFix: true });
+    type(strict, 'cafe');
+    expect(isFinished(strict)).toBe(false);
+    const kind = createFairCopy('café', null, { mustFix: true, forgiving: true });
+    expect(type(kind, 'cafe')).toContain('finished');
+    expect(kind.buffer).toBe('café');
+    expect(kind.errors).toBe(0);
+  });
+
+  it('leaves Fair Copy as it was by default', () => {
+    const test = createFairCopy('cat');
+    expect(type(test, 'caX')).toContain('finished');
+    expect(test.mustFix).toBe(false);
   });
 });

@@ -87,6 +87,12 @@ import { openUnlockDialog, type UnlockedItem } from './ui/unlockDialog';
 import { openWordLists } from './ui/wordLists';
 import { openPlayTogether } from './ui/playTogether';
 import { relayAnswer } from './net/answerRelay';
+import { RaceSession, type RaceSessionOptions } from './raceSession';
+import type { RaceLane } from './render/raceView';
+import { needsForgiving, type Racer } from './core/race';
+import { clockNow, type HostGame } from './net/host';
+import type { GuestEnd, GuestGame, RaceStart } from './net/guest';
+import type { Lobby } from './core/net/lobby';
 import { openWhatsNewDialog } from './ui/whatsNewDialog';
 import { showStickerToast } from './ui/stickerToast';
 import { hideWordsNote, showWordsNote } from './ui/wordsNote';
@@ -789,7 +795,9 @@ async function main(): Promise<void> {
   });
 
   /** Play together (REQUIREMENTS §13e). Names from other devices go through the word filter, so it waits for the word pack. */
-  const openTogether = (link: { joinCode?: string; strayAnswer?: string; answerRelayed?: boolean } = {}) => {
+  const openTogether = (
+    link: { joinCode?: string; strayAnswer?: string; answerRelayed?: boolean; resume?: { host: HostGame } | { guest: GuestGame }; ended?: GuestEnd } = {},
+  ) => {
     if (dialogOpen || game.phase !== 'ready') return;
     dialogOpen = true;
     void packReady().then(({ blocklist }) => {
@@ -802,6 +810,8 @@ async function main(): Promise<void> {
         },
         linkFor: (kind, code) => `${location.origin}${location.pathname}#${kind}=${code}`,
         ...link,
+        onHostRace: (host) => startHostRace(host),
+        onGuestRace: (guest, start) => startGuestRace(guest, start),
         onClose: () => {
           dialogOpen = false;
           menu.refresh();
@@ -1133,6 +1143,104 @@ async function main(): Promise<void> {
     if (!deck) passageDecks.set(lang, (deck = new PassageDeck(Math.random, PASSAGES.filter((p) => p.lang === lang))));
     return deck;
   };
+  // ---- Ink Race (M36) ----------------------------------------------------
+
+  let race: RaceSession | null = null;
+  /** Guests whose race and lobby news main.ts already listens to (once per connection). */
+  const wiredGuests = new WeakSet<GuestGame>();
+
+  const raceLanes = (lobby: Lobby, ids: readonly string[], you: string): RaceLane[] =>
+    ids.flatMap((id) => {
+      const p = lobby.players.find((pl) => pl.id === id);
+      return p ? [{ id, name: p.name, badge: p.badge, you: id === you }] : [];
+    });
+
+  const endRace = () => {
+    race?.destroy();
+    race = null;
+  };
+
+  type RaceStartOptions = Omit<RaceSessionOptions, 'forgiving' | 'reducedMotion' | 'cosmetics' | 'season' | 'announce' | 'onEvents'>;
+  const openRace = (options: RaceStartOptions) => {
+    endRace();
+    menu.hide();
+    race = new RaceSession(renderer.app, {
+      ...options,
+      // Accents not on this player's own keyboard can be typed plainly, so nobody gets stuck mid-race.
+      forgiving: store.data.accents.forgiving || needsForgiving(options.passage.text, layout(), settings.keyboardKind),
+      reducedMotion: reducedMotion(settings, prefersReducedMotion()),
+      cosmetics: store.data.profile.cosmetics,
+      season: season(),
+      announce: (text) => (announcer.textContent = text),
+      onEvents: (events) => {
+        if (events.includes('finished')) sfx.play('page');
+        else if (events.includes('error') || events.includes('blocked')) sfx.play('error');
+        else if (events.includes('correct')) sfx.play('key');
+      },
+    });
+    if (import.meta.env.DEV) (window as unknown as { race: unknown }).race = race.devHelpers();
+  };
+
+  /** The host pressed Start (or Race again): the next passage from their words language, for everyone in the lobby. */
+  function startHostRace(host: HostGame): void {
+    const passage = passageDeck().next();
+    const started = host.startRace(passage.id, passage.lang, [...passage.text].length);
+    host.clearRaceListeners();
+    openRace({
+      passage,
+      lanes: raceLanes(host.lobby, started.racers.map((r) => r.id), 'host'),
+      you: 'host',
+      startAt: started.startAt,
+      isHost: true,
+      sendProgress: (at) => host.hostProgress(at),
+      sendFinish: (result) => host.hostFinish(result),
+      onAgain: () => startHostRace(host),
+      onLobby: () => {
+        host.toLobby();
+        endRace();
+        openTogether({ resume: { host } });
+      },
+    });
+    host.onRace((r, over) => race?.setStandings(r.racers, over));
+  }
+
+  /** The host started a race (from the lobby dialog, or again from the race card). */
+  function startGuestRace(guest: GuestGame, start: RaceStart): void {
+    const passage = PASSAGES.find((p) => p.id === start.passageId);
+    if (!passage || !guest.lobby || !guest.you) return openTogether({ resume: { guest } });
+    if (!wiredGuests.has(guest)) {
+      wiredGuests.add(guest);
+      // While a race has the screen, main.ts follows the host; in the lobby the dialog does.
+      guest.onRace((next) => race && startGuestRace(guest, next));
+      guest.onToLobby(() => {
+        if (!race) return;
+        endRace();
+        openTogether({ resume: { guest } });
+      });
+      guest.onEnd((why) => {
+        if (!race) return;
+        endRace();
+        openTogether({ ended: why });
+      });
+    }
+    guest.clearRaceListeners();
+    openRace({
+      passage,
+      lanes: raceLanes(guest.lobby, start.ids, guest.you),
+      you: guest.you,
+      startAt: start.startAt,
+      isHost: false,
+      sendProgress: (at) => guest.sendProgress(at),
+      sendFinish: (result) => guest.sendFinish(result),
+      onLobby: () => {
+        guest.leaveRace();
+        endRace();
+        openTogether({ resume: { guest } });
+      },
+    });
+    guest.onStandings((racers, over) => race?.setStandings(racers, over));
+  }
+
   const startFairCopy = (seconds: number | null, first?: Passage) => {
     fairCopy?.destroy();
     fairCopy = new FairCopySession(renderer.app, {
@@ -1427,8 +1535,8 @@ async function main(): Promise<void> {
 
   /** Show the right menu for the current phase (the main menu when idle, the pause menu when paused). */
   function syncMenu(): void {
-    // Fair Copy has the screen; it shows the menu itself when the player leaves.
-    if (fairCopy) {
+    // Fair Copy or a race has the screen; each shows the menu (or lobby) itself when the player leaves.
+    if (fairCopy || race) {
       if (menu.visible) menu.hide();
       return;
     }
@@ -1834,7 +1942,7 @@ async function main(): Promise<void> {
         }),
     },
     // Menus and dialogs handle their own keys.
-    () => dialogOpen || menu.visible || fairCopy !== null,
+    () => dialogOpen || menu.visible || fairCopy !== null || race !== null,
   );
 
   // Pause when the player looks away (REQUIREMENTS §10), and make sure the save is written.
@@ -1901,6 +2009,7 @@ async function main(): Promise<void> {
     }
     renderer.sync(game, alpha, ticker.deltaMS);
     fairCopy?.update(ticker.deltaMS);
+    race?.update(ticker.deltaMS);
     syncMenu();
   });
   syncMenu();
@@ -1949,6 +2058,46 @@ async function main(): Promise<void> {
     const passageParam = params.get('passage');
     const firstPassage = passageParam === null ? undefined : (PASSAGES.find((p) => p.id === passageParam) ?? PASSAGES[Number(passageParam)]);
     if (fairCopyLink !== undefined) startFairCopy(fairCopyLink, firstPassage);
+    // `?race=demo` races two bots (no network), for screenshots: `&bots=45,30` sets their WPM.
+    if (params.get('race') === 'demo') {
+      const speeds = (params.get('bots') ?? '45,30').split(',').map(Number).filter((n) => n > 0);
+      const startDemo = () => {
+        const passage = firstPassage ?? passageDeck().next();
+        const length = [...passage.text].length;
+        const startAt = clockNow() + GAME_CONFIG.race.countdownMs;
+        const bots = speeds.map((wpm, i) => ({ id: `p${i + 1}`, wpm, name: ['Ada', 'Sam', 'Kit'][i] ?? `Bot ${i + 1}`, badge: ['teal', 'crimson', 'gold'][i] ?? 'ink' }));
+        let racers: Racer[] = [{ id: 'host', at: 0, result: null, left: false }, ...bots.map((b) => ({ id: b.id, at: 0, result: null, left: false }))];
+        const set = (id: string, change: (r: Racer) => Racer) => (racers = racers.map((r) => (r.id === id && !r.result ? change(r) : r)));
+        const timer = setInterval(() => {
+          const ms = clockNow() - startAt;
+          for (const b of bots) {
+            const at = Math.max(0, Math.min(length, Math.floor(((b.wpm * 5) / 60000) * ms)));
+            set(b.id, (r) => (at >= length ? { ...r, at, result: { ms, netWpm: b.wpm, accuracy: 0.96, errors: 2 } } : { ...r, at }));
+          }
+          const over = racers.every((r) => r.result || r.left);
+          race?.setStandings(racers, over);
+          if (over || !race) clearInterval(timer);
+        }, GAME_CONFIG.race.progressIntervalMs);
+        openRace({
+          passage,
+          lanes: [{ id: 'host', name: players.active.name, badge: players.active.badge, you: true }, ...bots.map((b) => ({ id: b.id, name: b.name, badge: b.badge, you: false }))],
+          you: 'host',
+          startAt,
+          isHost: true,
+          sendProgress: (at) => set('host', (r) => ({ ...r, at })),
+          sendFinish: (result) => set('host', (r) => ({ ...r, at: length, result })),
+          onAgain: () => {
+            clearInterval(timer);
+            startDemo();
+          },
+          onLobby: () => {
+            clearInterval(timer);
+            endRace();
+          },
+        });
+      };
+      startDemo();
+    }
     (window as unknown as { inkling: unknown }).inkling = { world: game, loop, renderer, get pack() { return pack; }, store, menu, openKeys, openSaves, openSettings: openSettingsDialog, openVocab };
   }
 }

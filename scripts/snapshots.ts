@@ -307,6 +307,11 @@ const SHOW_SPLASH = `(async () => {
   return 'ok';
 })()`;
 
+/** Ink Race demo (M36): type the start of the passage, leaving a mistake to fix. */
+const RACE_TYPE_SOME = `(() => { const r = window.race; if (!r) return 'no race'; r.play("You don't know about me without you have raed", 160); return 'ok'; })()`;
+/** Ink Race demo: type the whole passage, so the card comes up. */
+const RACE_FINISH = `(() => { const r = window.race; if (!r) return 'no race'; r.play(r.test().text, 40); return 'ok'; })()`;
+
 const MAIN_TOUR: Step[] = [
   // The one-time "Made for a keyboard" notice on a phone (M29), then back to a desktop.
   { phone: true }, { open: '?season=none' }, { shot: 'keyboard-notice' }, { click: 'Play anyway' }, { phone: false },
@@ -344,6 +349,13 @@ const MAIN_TOUR: Step[] = [
   { eval: ENGLISH }, { open: '?season=none' },
   { click: 'How to play' }, { eval: SCROLL_TOP }, { shot: 'how-to-play' },
   { eval: SHOW_BOSSES }, { wait: 300 }, { shot: 'how-to-play-bosses' }, { key: 'Escape' },
+  // Play together (M35) and Ink Race (M36): the dialog, then a race against two bots (`?race=demo`):
+  // the countdown, partway with a mistake to fix, and the race card.
+  { click: 'Play together' }, { shot: 'play-together' }, { key: 'Escape' },
+  { open: '?season=none&race=demo&passage=twain-huck&bots=40,30' }, { wait: 1200 }, { shot: 'race-countdown' },
+  { wait: 2600 }, { eval: RACE_TYPE_SOME }, { wait: 6000 }, { shot: 'race' },
+  { open: '?season=none&race=demo&passage=twain-huck&bots=2000,1500' }, { wait: 4200 }, { eval: RACE_FINISH }, { wait: 1500 }, { shot: 'race-card' },
+  { open: '?season=none' },
   // The Daily Page (M20), with a sample streak.
   { eval: SAMPLE_DAILY }, { click: 'Daily Page' }, { eval: SCROLL_TOP }, { shot: 'daily' }, { key: 'Escape' },
   // The sticker book (M21), with some sample stickers.

@@ -598,6 +598,21 @@ export const GAME_CONFIG = {
       minDominance: 0.35,
     },
   },
+  /** Ink Race (src/core/race.ts, src/raceSession.ts; REQUIREMENTS §13e). */
+  race: {
+    /** Keys that still land after a mistake (shown in red) before the rest are blocked until Backspace. */
+    maxWrong: 5,
+    /** The 3-2-1 countdown. */
+    countdownMs: 3000,
+    /** Start is sent this long before the countdown begins, so every device has it in time. */
+    leadMs: 1200,
+    /** Each racer reports progress (and the host sends standings) this often. */
+    progressIntervalMs: 100,
+    /** A race ends after this long even if someone hasn't finished. */
+    maxMs: 3 * 60 * 1000,
+    /** The track strip above the passage, in page pixels. */
+    track: { laneHeight: 26, top: 56, nameWidth: 150, dotRadius: 8 },
+  },
   /** The faint manuscript the scribe writes as a page goes on (src/render/manuscript.ts). */
   manuscript: {
     /** How strong the scribbles are, 0..1. Faint, so they never compete with targets. */

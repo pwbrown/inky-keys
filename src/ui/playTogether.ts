@@ -11,7 +11,7 @@ import { t, type MessageKey } from '../i18n';
 import type { Badge } from '../storage/profiles';
 import { BADGES } from '../storage/profiles';
 import { takeRelayedAnswers } from '../net/answerRelay';
-import { GuestGame, type GuestEnd } from '../net/guest';
+import { GuestGame, type GuestEnd, type RaceStart } from '../net/guest';
 import { HostGame } from '../net/host';
 import { PeerError, answerInvite, peersSupported } from '../net/peer';
 import { listenForCodes, playCode, soundSupported } from '../net/sound';
@@ -32,6 +32,14 @@ export interface PlayTogetherOptions {
   strayAnswer?: string;
   /** The hosting tab in this browser took that reply, so this tab can be closed. */
   answerRelayed?: boolean;
+  /** Back from a race: open on this game's lobby. */
+  resume?: { host: HostGame } | { guest: GuestGame };
+  /** Back from a race that ended because the connection did. */
+  ended?: GuestEnd;
+  /** The host pressed Start: the dialog closes and hands over the game. */
+  onHostRace(host: HostGame): void;
+  /** The host started a race: the dialog closes and hands over the game. */
+  onGuestRace(guest: GuestGame, race: RaceStart): void;
   onClose(): void;
 }
 
@@ -75,6 +83,9 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
   let stopListening: (() => void) | null = null;
   let stopSound: (() => void) | null = null;
   let closed = false;
+  /** Closing hands the game to a race instead of ending it. */
+  let handingOff = false;
+  let lobbySize = 0;
 
   const body = h('div', { className: 'pt-body' });
   const status = h('p', { className: 'sd-status pt-status', role: 'status', 'aria-live': 'polite' });
@@ -242,15 +253,51 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
 
   // ---- Flows -----------------------------------------------------------
 
-  const startHosting = async () => {
-    hosting = new HostGame({ me: options.me, app: options.app, nameFor: options.nameFor });
-    hosting.onChange((lobby) => {
-      if (view.v === 'host') refreshLobby(lobby, 'host');
+  const startHosting = async (game = new HostGame({ me: options.me, app: options.app, nameFor: options.nameFor })) => {
+    hosting = game;
+    lobbySize = game.lobby.players.length;
+    game.onChange((lobby) => {
+      if (closed || view.v !== 'host') return;
+      // A player joining or leaving changes whether Start is offered; a ping only changes the list.
+      if (lobby.players.length !== lobbySize) {
+        lobbySize = lobby.players.length;
+        render(false);
+      } else {
+        refreshLobby(lobby, 'host');
+      }
     });
     stopRelay = takeRelayedAnswers((code) => void admit(code).catch((error) => say(problemMessage(error, 'answer'))));
     view = { v: 'host', code: null };
     render();
     await newInvite();
+  };
+
+  /** Close, keeping the connection open for the race. */
+  const handOff = () => {
+    handingOff = true;
+    close();
+  };
+
+  const watchGuest = (game: GuestGame) => {
+    guest = game;
+    game.onChange((lobby) => {
+      if (closed) return;
+      if (view.v === 'joined') return refreshLobby(lobby, game.you ?? '');
+      view = { v: 'joined' };
+      render();
+      say(t('together.inLobby'));
+    });
+    game.onEnd((why) => {
+      if (closed) return;
+      guest = null;
+      view = { v: 'ended', why };
+      render();
+    });
+    game.onRace((race) => {
+      if (closed) return;
+      handOff();
+      options.onGuestRace(game, race);
+    });
   };
 
   const newInvite = async () => {
@@ -281,6 +328,9 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
       throw error;
     }
     const joined = hosting.lobby.players.find((p) => !before.has(p.id));
+    // The code was used: clear it, so the next player's reply goes into an empty box.
+    const paste = body.querySelector<HTMLInputElement>('.pt-paste');
+    if (paste) paste.value = '';
     await newInvite();
     say(joined ? t('together.joined', { name: joined.name }) : t('together.refused'));
   };
@@ -295,18 +345,7 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
     try {
       const peer = await joining.connected;
       if (closed) return peer.close();
-      guest = new GuestGame(peer, options.me, options.app);
-      guest.onChange((lobby) => {
-        if (view.v === 'joined') return refreshLobby(lobby, guest?.you ?? '');
-        view = { v: 'joined' };
-        render();
-        say(t('together.inLobby'));
-      });
-      guest.onEnd((why) => {
-        guest = null;
-        view = { v: 'ended', why };
-        render();
-      });
+      watchGuest(new GuestGame(peer, options.me, options.app));
     } catch {
       if (closed) return;
       view = { v: 'joinPaste' };
@@ -356,7 +395,26 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
                 step(2, t('together.hostStep2')),
                 pasteBox('answer', t('together.pasteReply'), admit).form,
               ]),
-        h('p', { className: 'tc-intro' }, [t('together.racesSoon')]),
+        hosting.lobby.players.length >= 2
+          ? h('div', { className: 'pt-start' }, [
+              h('p', { className: 'tc-intro' }, [t('together.readyToRace')]),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'tc-primary pt-start-btn',
+                  'data-id': 'start',
+                  onClick: () => {
+                    const game = hosting;
+                    if (!game) return;
+                    handOff();
+                    options.onHostRace(game);
+                  },
+                },
+                [t('together.start')],
+              ),
+            ])
+          : h('p', { className: 'tc-intro' }, [t('together.needPlayers')]),
       ];
     },
 
@@ -421,9 +479,11 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
     closed = true;
     stopAudio();
     stopRelay?.();
-    cancelJoin?.();
-    hosting?.close();
-    guest?.leave();
+    if (!handingOff) {
+      cancelJoin?.();
+      hosting?.close();
+      guest?.leave();
+    }
     root.removeEventListener('keydown', onKeyDown);
     root.remove();
     previousFocus?.focus?.();
@@ -433,7 +493,16 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
   root.addEventListener('keydown', onKeyDown);
   host.append(root);
   render();
-  if (options.joinCode) {
+  if (options.ended) {
+    view = { v: 'ended', why: options.ended };
+    render();
+  } else if (options.resume && 'host' in options.resume) {
+    void startHosting(options.resume.host);
+  } else if (options.resume) {
+    watchGuest(options.resume.guest);
+    view = { v: 'joined' };
+    render();
+  } else if (options.joinCode) {
     view = { v: 'joinPaste' };
     render();
     const input = body.querySelector<HTMLInputElement>('.pt-paste');

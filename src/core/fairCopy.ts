@@ -13,6 +13,7 @@ import { GAME_CONFIG } from './config';
 import type { Language } from './languages';
 import { applyEdit } from './editing';
 import { accuracy, wpm } from './stats';
+import { plainLetter } from './accents';
 
 export interface Passage {
   id: string;
@@ -788,14 +789,30 @@ export interface FairCopy {
   /** The time of the last keystroke, and whether it was right. */
   lastKeyAt: number | null;
   lastWasCorrect: boolean;
+  /**
+   * Ink Race (M36): mistakes must be fixed. Once one is on the page only
+   * `GAME_CONFIG.race.maxWrong` keys land; the rest are `blocked` until
+   * Backspace, and the test only finishes when every character is right.
+   */
+  mustFix: boolean;
+  /** A plain letter counts for its accented one (é typed as e), like the game's Forgiving accents, and `? !` for `¿ ¡`. */
+  forgiving: boolean;
 }
 
-export type FairCopyEvent = 'started' | 'correct' | 'error' | 'ignored' | 'fixed' | 'finished';
+/** `blocked`: with `mustFix`, a key that didn't land because mistakes are waiting to be fixed. */
+export type FairCopyEvent = 'started' | 'correct' | 'error' | 'ignored' | 'blocked' | 'fixed' | 'finished';
 
-export function createFairCopy(text: string, limitMs: number | null = null): FairCopy {
+export interface FairCopyRules {
+  mustFix?: boolean;
+  forgiving?: boolean;
+}
+
+export function createFairCopy(text: string, limitMs: number | null = null, rules: FairCopyRules = {}): FairCopy {
   return {
     text,
     limitMs,
+    mustFix: rules.mustFix ?? false,
+    forgiving: rules.forgiving ?? false,
     buffer: '',
     startedAt: null,
     finishedAt: null,
@@ -814,6 +831,20 @@ export function createFairCopy(text: string, limitMs: number | null = null): Fai
 export function marks(test: Pick<FairCopy, 'buffer' | 'text'>): boolean[] {
   const text = [...test.text];
   return [...test.buffer].map((c, i) => c === text[i]);
+}
+
+/** With `forgiving`, what may be typed for `expected`: the plain letter, or `? !` for `¿ ¡`. */
+function standIn(expected: string): string {
+  if (expected === '¿') return '?';
+  if (expected === '¡') return '!';
+  return plainLetter(expected);
+}
+
+/** Characters typed right from the start, before the first mistake: a racer's progress. */
+export function correctPrefix(test: Pick<FairCopy, 'buffer' | 'text'>): number {
+  const ok = marks(test);
+  const first = ok.indexOf(false);
+  return first === -1 ? ok.length : first;
 }
 
 /** Mistakes still on the page. */
@@ -845,6 +876,11 @@ export function typeKey(test: FairCopy, char: string, now: number): FairCopyEven
   const text = [...test.text];
   const at = [...test.buffer].length;
   const expected = text[at];
+  if (test.forgiving && expected !== undefined && char !== expected && standIn(expected) === char) char = expected;
+  if (test.mustFix && (at >= text.length || at - correctPrefix(test) >= GAME_CONFIG.race.maxWrong)) {
+    // Too many mistakes waiting (or the page is full of them): this key doesn't land.
+    return [...events, 'blocked'];
+  }
   test.buffer = applyEdit({ buffer: test.buffer, cursor: at }, { type: 'insert', char }).buffer;
   if (char === expected) {
     test.correct++;
@@ -865,8 +901,8 @@ export function typeKey(test: FairCopy, char: string, now: number): FairCopyEven
     events.push('error');
   }
   test.lastKeyAt = now;
-  // The last character ends it, right or wrong.
-  if (at + 1 >= text.length) {
+  // The last character ends it, right or wrong (with mustFix, only once everything is right).
+  if (at + 1 >= text.length && (!test.mustFix || test.buffer === test.text)) {
     test.finishedAt = now;
     events.push('finished');
   }

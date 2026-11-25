@@ -83,6 +83,7 @@ This is where the Spellbook mechanic comes in. The key-selection screen is a **l
 - **HUD:** the inkwell (health) in the top-left, the score written in pencil in the top-right, and the page number and progress as a footer. The chapter is in the scribe's heading on the page.
 - **Graded page (summary):** a red-pen grade, WPM and accuracy written in the margin, the most-missed keys circled, and teacher-style notes ("Watch your **R**!"). It also shows which sorts gained mastery on this page.
 - **Pause:** a bookmark ribbon drops down.
+- **Ink Race (M36):** the Fair Copy page with the passage two ruled lines lower. Above it is a **track strip**, one lane per racer: their name, a faint line, and their ink drop (in their badge color, ringed in red for you) sliding toward a red finish flag. Places are written in red pen by the flag as racers finish. A big red-pen **3, 2, 1, Go!** counts down over the page. The **race card** lists places in red pen, each racer's ink drop and name, and their speed, accuracy and time; the host's card offers Race again and Back to the lobby.
 
 ---
 

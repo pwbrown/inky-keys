@@ -112,3 +112,21 @@
 .pt-status:empty {
   display: none;
 }
+
+.pt-start {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.pt-start .tc-intro {
+  margin: 0;
+}
+
+.pt-start-btn {
+  font-size: 18px;
+  padding: 10px 22px;
+}

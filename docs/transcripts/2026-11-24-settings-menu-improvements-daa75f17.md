@@ -1,6 +1,6 @@
 # Settings menu improvements
 
-Claude Code session started 2026-11-24. 8 prompts.
+Claude Code session started 2026-11-24. 10 prompts.
 
 Exported with `npm run transcript`. Tool output, hidden reasoning and system prompts are left out; commands are cut short when long. Private details (email, home folder) are removed.
 
@@ -1432,3 +1432,65 @@ I ran the snapshots into `docs/progression/latest`, and 43 images changed.
 - **Everything else:** refreshed to match the current build.
 
 The snapshot tour doesn't capture Fair Copy, so the lines fix isn't in the gallery. The `README` doesn't need changes, because it already points at the `latest` images. The new snapshots are on `chore/snapshots-latest` and aren't committed yet.
+
+## 🧑 Prompt
+
+> Commit and push
+
+---
+
+*The conversation grew too long here, so Claude Code summarized the earlier part and carried on from the summary.*
+
+---
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Show branch, non-snapshot changes and recent commits
+
+  ```bash
+  git branch --show-current && git status --short | grep -v '^ M docs/progression/latest/' ; git log --oneline -3
+  ```
+- **Shell:** List branches and check where snapshot changes live
+
+  ```bash
+  git branch -a && git log --oneline main -3 && git log --oneline origin/main -1 && git log --oneline --all -- docs/progression/latest/menu.png | head -3 && git stash list
+  ```
+
+</details>
+
+### 🤖 Claude
+
+I haven't committed or pushed anything, because the checkout changed while the snapshots were waiting.
+
+- **Main has moved on:** it's now at 2.32.0, "Play together (beta)", and that's already pushed.
+- **This checkout is on another branch:** it's on `feat/m36-ink-race`, with uncommitted work in `src/core/config.ts`, `src/core/fairCopy.ts`, `src/core/fairCopy.test.ts` and a new `src/core/race.ts`. That looks like another session's work in progress, so I didn't switch branches or commit here, since either could tangle with it.
+- **The 43 new PNGs are out of date:** they're still uncommitted in this working tree, mixed in with that race work. They show 2.31.1, so screens that Play together changed (like the menu and players screen) don't show 2.32.0.
+
+There are two ways to land them:
+
+- **Re-run in a worktree (my recommendation):** I take a separate copy of `main`, run `npm run snapshots -- latest` there, then commit, fast-forward and push. That leaves this checkout and the race work untouched. The stale PNGs here would then be reset to match `main` once the race work is committed or stashed.
+- **Wait for m36:** I run the snapshots again once the ink-race milestone is merged, which you'd need at the end of that milestone anyway.
+
+## 🧑 Prompt
+
+> Wait for m36
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Reset the stale snapshots and delete the empty snapshot branch
+
+  ```bash
+  git log --oneline -1 chore/snapshots-latest && git checkout -- docs/progression/latest/ && git branch -d chore/snapshots-latest && git status --short
+  ```
+
+</details>
+
+### 🤖 Claude
+
+OK, the snapshots will wait until the ink-race milestone (m36) is done.
+
+- **Stale images reset:** I put the 43 PNGs in `docs/progression/latest/` back to what's committed on `main`, so they can't get committed by accident with the race work. They were showing 2.31.1 anyway.
+- **Branch deleted:** I deleted `chore/snapshots-latest`. It had no commits of its own and pointed at 2.31.1, which is already in `main`.
+- **Race work untouched:** the uncommitted changes on `feat/m36-ink-race` are all still there (`race.ts`, `race.test.ts`, the `fairCopy` and `net/protocol` changes, and `config.ts`).
+
+At the end of m36, `npm run snapshots -- m36` and `-- latest` will capture both Play together and the race in one go.

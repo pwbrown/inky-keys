@@ -485,15 +485,34 @@ Stickers arrive the moment they're earned, with a toast in the corner that doesn
 
 **Before release:** a native speaker reviews `es.ts` and the Spanish pages (the game may ship first); a Latin American layout is a later layout file.
 
+### M35–M36: Play together and Ink Race (2.32.0–2.33.0, beta)
+
+| Play together | The countdown |
+|---|---|
+| <img src="m36/play-together.png" width="420" alt="The Play together dialog with a Beta badge: a note that it is new and still being tested, Host a game (invite up to 3 players) and Join a game (use the code from the host), and a line that the computers talk directly over the network and nothing goes to the internet"> | <img src="m36/race-countdown.png" width="420" alt="An Ink Race about to start: three lanes above the passage (Player 1 marked as you, Ada and Sam) with ink drops at the start and a red flag at the finish, the passage two ruled lines down in pale ink, a big red-pen 1 over the page and Get ready at the bottom"> |
+| Host or join a game on the same Wi-Fi, with a Beta badge here and on the menu tile. | Every device counts down to the same moment. |
+
+| Mid-race, a mistake to fix | The race card |
+|---|---|
+| <img src="m36/race.png" width="420" alt="Mid-race: the player's ink drop, ringed in red, is ahead of Ada and Sam; in the passage, raed is typed for read, with the wrong letters in red, a wavy underline and ae written above; the footer says Fix mistakes with Backspace to keep going, Esc leaves the race"> | <img src="m36/race-card.png" width="420" alt="The Race results card over the page: 1st Ada, 2nd Sam, 3rd Player 1 (you), each with an ink drop, WPM, accuracy and time, then Race again (Enter) and Back to the lobby (Esc); places are written in red pen by the finish flag"> |
+| Progress stops at a mistake until it's fixed, so the first to finish wins. | Places, speed, accuracy and time; the host can race again. |
+
+**New:**
+- **Play together (M35, 2.32.0):** devices on the same network connect directly with WebRTC and no servers (no STUN or TURN, so nothing goes to the internet). Players swap a handshake code each way, cut down from the browser's 600–1,500 characters to about 130: as a link, pasted, or played as sound through a small FSK modem. A lobby of up to 4 with names, ink drops and ping.
+- **Ink Race (M36, 2.33.0):** the host starts a race with a passage from their words language. Fair Copy's rules plus **mistakes must be fixed** (5 keys land in red, then Backspace), with a **track strip** of every racer's ink drop, a 3-2-1 countdown and a race card. Accents that aren't on a player's own keyboard can be typed plainly. Nothing is saved during the beta.
+- `?race=demo` races bots; the snapshot tour has `play-together`, `race-countdown`, `race` and `race-card` shots.
+
+**Changed:** the menu's bottom row has three small tiles (Play together, Saves, About).
+
 ## Keeping this up to date
 
 At the end of each milestone, run:
 
 ```bash
-npm run snapshots -- m34
+npm run snapshots -- m36
 ```
 
-That writes a standard set of shots to `docs/progression/m34/` (keyboard-notice, splash, menu, about, desk, players, settings, settings-layout, type-case-dvorak, chapter-intro-dvorak, type-case-azerty, type-case-spanish, menu-fr, contents-accents, accent-intro, accent-help, type-case-accents, menu-es, contents-accents-es, accent-intro-es, accent-help-es, how-to-play, how-to-play-bosses, daily, stickers, challenge, practice, type-case, briefing, lineup, capitals, pause, contents, chapter-intro, play, page-done, and the holiday shots menu-thanksgiving, lineup-thanksgiving, menu-christmas, lineup-christmas, desk-holidays and stickers-holidays, then the web pages site-parents, site-how-to-play, site-fr-accents and site-es-accents). `npm run snapshots -- m34 holidays` takes only the holiday shots. Then:
+That writes a standard set of shots to `docs/progression/m36/` (keyboard-notice, splash, menu, about, desk, players, settings, settings-layout, type-case-dvorak, chapter-intro-dvorak, type-case-azerty, type-case-spanish, menu-fr, contents-accents, accent-intro, accent-help, type-case-accents, menu-es, contents-accents-es, accent-intro-es, accent-help-es, how-to-play, how-to-play-bosses, play-together, race-countdown, race, race-card, daily, stickers, challenge, practice, type-case, briefing, lineup, capitals, pause, contents, chapter-intro, play, page-done, and the holiday shots menu-thanksgiving, lineup-thanksgiving, menu-christmas, lineup-christmas, desk-holidays and stickers-holidays, then the web pages site-parents, site-how-to-play, site-fr-accents and site-es-accents). `npm run snapshots -- m36 holidays` takes only the holiday shots. Then:
 
 1. Run `npm run snapshots -- latest` too, so the "Latest" column matches.
 2. Add a section under **Milestone by milestone** with one or two shots and what's **New** or **Changed**.

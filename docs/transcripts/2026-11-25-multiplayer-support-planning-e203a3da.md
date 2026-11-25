@@ -1,6 +1,6 @@
 # Multiplayer support planning
 
-Claude Code session started 2026-11-25. 2 prompts.
+Claude Code session started 2026-11-25. 4 prompts.
 
 Exported with `npm run transcript`. Tool output, hidden reasoning and system prompts are left out; commands are cut short when long. Private details (email, home folder) are removed.
 
@@ -1152,12 +1152,1163 @@ The label wraps onto two lines, clear of the key. Resetting the viewport and run
 
 All green. Exporting the transcript and scanning it for private details before committing:
 
-<details><summary>1 tool call</summary>
+<details><summary>3 tool calls</summary>
 
 - **Shell:** Export the session transcript
 
   ```bash
   npm run transcript 2>&1 | tail -3; git status --short docs/transcripts | head
+  ```
+- **Shell:** Scan new transcript for emails, paths, tokens
+
+  ```bash
+  f=docs/transcripts/2026-11-25-multiplayer-support-planning-e203a3da.md; grep -nEi "[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}" $f | grep -v "noreply@anthropic" | head; grep -nE "/Users/|/private/tmp" $f | head -5; grep -nEo "(ghp_|gho_|sk-|xox[bp]-|AKIA)[A-Za-z0-9_-]{8,}" $f | head; grep -nE "\b(192\.168|10\.)[0-9.]+" $f | head -5; git diff --stat docs/transcripts/2026-11-24-settings-menu-improvements-daa75f17.md | tail -1
+  ```
+- **Shell:** Scan the other transcript change
+
+  ```bash
+  git diff docs/transcripts/2026-11-24-settings-menu-improvements-daa75f17.md | grep "^+" | grep -nEi "@[a-z0-9-]+\.[a-z]{2,}|/Users/[a-z]|(ghp_|gho_|sk-|xox[bp]-|AKIA)[A-Za-z0-9_-]{8,}" | grep -v "noreply@anthropic" | head
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Clean. Committing everything except the old snapshot images that were already modified before this work:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Commit the Play together beta
+
+  ```bash
+  git add CLAUDE.md PRIVACY.md docs/REQUIREMENTS.md docs/transcripts site/es/privacy.md site/fr/privacy.md src package.json package-lock.json && git status --short | grep -v "^ M docs/progression/latest" ; git commit -q -F - <<'EOF'
+  Play together (beta): connect on the same Wi-Fi (2.32.0)
+
+  - Roadmap for playing together (REQUIREMENTS §13e): Connections, Ink Race, Inkwell Watch
+  - WebRTC between devices on the local network with no ICE servers, so nothing goes to the internet
+  - Compact handshake codes (about 130 characters) carried as links, pasted, or played as sound
+  - Sound pairing: a two-band F
+  … (470 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Merging into `main` (fast-forward) and deleting the branch:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Fast-forward main and delete the branch
+
+  ```bash
+  git switch -q main && git merge --ff-only feat/m35-connections | tail -2 && git branch -d feat/m35-connections && grep -n "branches\|on:" .github/workflows/deploy.yml | head -5
+  ```
+
+</details>
+
+### 🤖 Claude
+
+The tag script needs a clean tree, so I'll set the old snapshot images aside while tagging, then put them back:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Tag v2.32.0 with a clean tree
+
+  ```bash
+  git stash push -q -m "snapshots-latest (pre-existing)" -- docs/progression/latest && npm run release:tag 2>&1 | tail -4; git stash pop -q && git status --short | head -3 && git tag --points-at HEAD
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Tagged, and the snapshot images are back as they were. Pushing `main` (which deploys) and the tag:
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Push main and the v2.32.0 tag
+
+  ```bash
+  git push origin main 2>&1 | tail -2 && git push origin v2.32.0 2>&1 | tail -2
+  ```
+- **Shell:** Check the deploy and release runs started
+
+  ```bash
+  sleep 5; gh run list --limit 3 2>&1 | head -5
+  ```
+
+</details>
+
+### 🤖 Claude
+
+I pushed Play together to `main` as release **2.32.0** with a "Beta" badge, and tagged it `v2.32.0`. The Deploy, CI and Release workflows had all started but none had finished when I stopped, so it should reach inkykeys.com once Deploy completes.
+
+**The Beta badge:**
+- **Menu tile:** a small yellow "BETA" sticker sits on the tile's top edge. The tile's label now wraps to two lines so it stays clear of the P shortcut; I gave all three bottom-row tiles a little more side padding to make room.
+- **Dialog:** the title has the same badge, plus a line under it: "Play together is new and still being tested. If something goes wrong, please tell us (About, then Ideas and bugs)." It's in English, French and Spanish.
+- **Release notes:** the What's new entry reads "Play together (beta): connect with friends on the same Wi-Fi by link, code or sound. Races come next!"
+
+Checks, tests and the build passed before I merged.
+
+**Housekeeping:**
+- The branch was fast-forwarded into `main` and deleted.
+- The transcript export was included after a scan: no emails or tokens, and the home path was already removed.
+- The `docs/progression/latest/` screenshots that were already modified before this work are still uncommitted in your working tree. I set them aside only while tagging, then put them back exactly as they were.
+
+**When you test it out there:**
+1. Try two laptops on the same home Wi-Fi with different browsers (Chrome + Safari, Chrome + Firefox) and check that they connect.
+2. Try sound pairing in a quiet room and with people talking nearby, and note how often it hears the code on the first play.
+3. A school or office network may say it "Couldn't reach the other computer". That's expected on networks that keep devices apart.
+4. Note the results in REQUIREMENTS §14; they decide whether sound stays for Ink Race.
+
+## 🧑 Prompt
+
+> start planning the Ink Race milestone
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Read Fair Copy session and core state
+
+  ```bash
+  sed -n 40,198p src/fairCopySession.ts; sed -n 765,946p src/core/fairCopy.ts
+  ```
+- **Shell:** Survey Fair Copy view layout and main.ts wiring
+
+  ```bash
+  sed -n 1,80p src/render/fairCopyView.ts; grep -n "^  [a-zA-Z]*(.*{$\|^  private [a-zA-Z]*(\|^export" src/render/fairCopyView.ts; grep -n "startFairCopy\|fairCopy = new\|fairCopy?.destroy" src/main.ts | head
+  ```
+
+</details>
+
+### ❓ Claude asked
+
+- Fair Copy lets mistakes through and ends on the last character, so in a race, mashing keys would win. What rule should Ink Race use for mistakes?
+  - Fix before moving on (Recommended)
+  - Fair Copy rules, rank by net WPM
+  - Mistakes slow you down
+- How should players see each other while racing?
+  - Race track strip (Recommended)
+  - Ghost carets in the text
+  - Both
+- Players can have different words languages and keyboards. Which passage does a race use?
+  - Host's language (Recommended)
+  - English only for now
+  - Only passages all can type
+- Should race results be saved to each player's progress?
+  - Not during beta (Recommended)
+  - Save races and a sticker
+
+**Answer:** Your questions have been answered: "Fair Copy lets mistakes through and ends on the last character, so in a race, mashing keys would win. What rule should Ink Race use for mistakes?"="Fix before moving on (Recommended)", "How should players see each other while racing?"="Race track strip (Recommended)" selected preview:
+> ┌──────────────────────────────────────────┐
+> │ ● Ada   ───────●───────────────────── │ 🏁
+> │ ● Sam   ─────────────●─────────────── │
+> │ ● You   ──────────●────────────────── │
+> ├──────────────────────────────────────────┤
+> │ It is a truth universally acknow|edged, │
+> │ that a single man in possession of a    │
+> │ good fortune, must be in want of a wife.│
+> └──────────────────────────────────────────┘, "Players can have different words languages and keyboards. Which passage does a race use?"="Host's language (Recommended)", "Should race results be saved to each player's progress?"="Not during beta (Recommended)". You can now continue with these answers in mind.
+
+<details><summary>1 tool call</summary>
+
+- **Asked questions** (shown above)
+
+</details>
+
+### 🤖 Claude
+
+All recommended picks. Checking how Forgiving accents and "can this be typed" are decided today, since a guest may need them for the host's passage:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Find accent typeability and forgiving-accent helpers
+
+  ```bash
+  grep -n "^export function\|forgiving" src/core/accents.ts | head -20; grep -n "forgiving\|Forgiving" src/core/fairCopy.ts src/fairCopySession.ts src/main.ts | head -10; grep -n "deck\b\|passageDeck\|const deck" src/main.ts | head -5
+  ```
+
+</details>
+
+### 🤖 Claude
+
+That's everything needed. Writing the plan:
+
+<details><summary>1 tool call</summary>
+
+- **Wrote** `/Users/[removed]/.claude/plans/i-want-to-start-zany-treehouse-of-e203a3da-56a2-4f7a-b9c2-ef713e209740.md`
+
+</details>
+
+<details><summary><strong>📋 Plan for approval</strong></summary>
+
+# Milestone 36: Ink Race (branch `feat/m36-ink-race`)
+
+## Context
+Milestone 35 shipped Play together (beta) in 2.32.0: devices on the same Wi-Fi connect with WebRTC and no servers, and sit in a lobby with pings. Nothing can be played yet ("Races are coming in the next update"). Ink Race is the first game: a Fair Copy passage raced live by 2–4 players, in the style of TypeRacer. It stays in beta.
+
+Decisions settled while planning:
+- **Fix before moving on.** A wrong key shows in red and progress stops until it's backspaced, so the first to finish wins and mashing keys doesn't.
+- **Race track strip** above the passage: one lane per player, each ink drop sliding toward a finish flag.
+- **Host's words language.** The host's passage deck picks the passage. A guest whose keyboard setup can't type one of its accents gets Forgiving accents for that race.
+- **Nothing saved during beta.** Results show on the race card only. No `SAVE_VERSION` change and no stickers.
+
+## Rules (pure, `src/core/`)
+- **`src/core/fairCopy.ts`**: add options to `createFairCopy(text, limitMs, { mustFix, forgiving })`. Fair Copy keeps its defaults, so it doesn't change.
+  - `mustFix`: once a mistake is on the page, at most `GAME_CONFIG.race.maxWrong` more keys land (in red); after that, keys are `'blocked'` (a new event: a buzz, no error counted) until Backspace. The test only finishes when the buffer equals the text, never on a wrong last character.
+  - `forgiving`: a plain letter counts for its accented letter (`plainLetter` in `src/core/accents.ts`). The expected character goes into the buffer, so `marks()`, the view and the results don't change.
+- **`src/core/race.ts`** (new):
+  - Race state: passage id, start time, and each player's progress, finish time, result, or left.
+  - Reducers: `applyProgress`, `applyFinish`, `markLeft`.
+  - `standings()`: finished players by time, then the rest by progress.
+  - `isOver()`: everyone finished or left, or `race.maxMs` reached.
+  - `needsForgiving(text, layout, platform)`: true if any character's `howToType` is null.
+- **`src/core/net/protocol.ts`**: `PROTOCOL_VERSION` goes to 2, so 2.32.0 players are told to update. New messages:
+  - host → guest: `race` (passage id, language, start time on that guest's clock, which is the host's start plus the measured offset), `standings` (everyone's progress, about 10 times a second), `raceOver` (final standings), `toLobby`.
+  - guest → host: `progress` (correct characters so far), `finish` (time, net WPM, accuracy, errors).
+  - Strict reading, as in milestone 35.
+- **`GAME_CONFIG.race`**: countdown length (3 s), start lead time (how long after Start the countdown begins, to cover latency), `maxWrong` (5), `progressIntervalMs` (100), `maxMs` (3 min), and the track strip's sizes.
+
+## Connections outlive the dialog
+- Today `HostGame` and `GuestGame` live inside the Play together dialog. Move them into a small controller, **`src/net/together.ts`**, owned by `main.ts`. The dialog (`src/ui/playTogether.ts`) becomes a view of it.
+- The dialog closes when a race starts and opens again on the lobby afterwards. Closing the dialog still ends the game, as before.
+- `HostGame` gets `startRace()`, `onProgress`/`onFinish`, and broadcasts standings. `GuestGame` gets `onRace`, `onStandings` and `sendProgress`/`sendFinish`. Both keep their ping logic.
+
+## Playing (`src/raceSession.ts`, `src/render/raceView.ts`)
+- **`RaceSession`** is modeled on `src/fairCopySession.ts`: it owns the keyboard while it's open, as Fair Copy does via `bindKeyboard`.
+  - It builds a `createFairCopy(text, null, { mustFix: true, forgiving })`. Keys before "Go" are ignored, not counted as mistakes.
+  - It sends progress, sends the result on finishing, and shows standings.
+  - Esc leaves the race; the player shows as "left" and goes back to the lobby.
+  - `main.ts` runs it like `fairCopy` (the ticker calls `update`, and the game's own handler is suspended).
+- **`RaceView`** reuses `FairCopyView` for the page and text (its mistake marks already draw the red letters) and adds:
+  - the **track strip** in the band above the first ruled line: a lane per player with their ink-drop badge and name, a dot that eases forward, and a finish flag. If four lanes don't fit, the passage starts one ruled line lower (a `topRows` option in `FairCopySetup`).
+  - a **3-2-1-Go countdown** over the page (a still number with reduced motion).
+  - a **race card** in place of Fair Copy's card: places 1st–4th with badge, name, net WPM and accuracy, and "left" for anyone who dropped. The host gets **Race again** (next passage) and **Back to lobby**; guests see "Waiting for the host" and **Leave**.
+- The host's Start button appears in the lobby once there are 2 or more players. The "Races are coming" line goes.
+
+## Dev and snapshots
+- A `?race=demo` dev link starts a race against two bot rivals that move at set speeds (no network), as `?fairCopy=` does. It's for visual checks and for `npm run snapshots -- m36`: countdown, mid-race, race card.
+
+## Docs and release
+- REQUIREMENTS §13e milestone 36 row: the rules above. §14: the two-laptop findings from 2.32.0, if you have them by then.
+- DESIGN.md: the track strip and race card.
+- PRIVACY.md is unchanged; races send only progress numbers and results to the host.
+- Release **2.33.0** (Play together still Beta): "Ink Race: race your friends through a passage on the same Wi-Fi."
+- en/fr/es strings.
+
+## Verification
+- `npm run check` and `npm run build`. Unit tests:
+  - must-fix: blocking after `maxWrong` keys, no finish on a wrong last character, Backspace unblocks.
+  - forgiving matching.
+  - Fair Copy unchanged with the default options.
+  - race reducers, standings and `isOver`, including players who leave.
+  - protocol v2 messages accepted, and bad ones rejected.
+- `?race=demo` in the browser pane: screenshots of the countdown, the strip mid-race and the card, at the normal width and at phone width.
+- Two tabs in the browser pane (host and guest, as in milestone 35): start, race, and check both agree on the standings. Also check a guest leaving mid-race, the host closing mid-race, and Race again.
+- Your test on two laptops after release, as in 2.32.0.
+- End of milestone: `npm run snapshots -- m36` and `-- latest`, plus `docs/progression/README.md`.
+
+
+</details>
+
+<details><summary>1 tool call</summary>
+
+- **Presented the plan** (shown above)
+
+</details>
+
+### 🤖 Claude
+
+The plan is approved, so I'm starting on the core rules: the fix-before-moving-on and forgiving-accent options in Fair Copy.
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Create branch and read accent helpers
+
+  ```bash
+  git switch -c feat/m36-ink-race && sed -n 60,75p src/core/accents.ts && grep -n "forgivingAccents" src/core/*.ts | head -5
+  ```
+- **Shell:** Add must-fix and forgiving rules to Fair Copy
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/core/fairCopy.ts'
+  s=open(p).read()
+  pairs=[
+  ("""import { accuracy, wpm } from './stats';""","""import { accuracy, wpm } from './stats';
+  import { plainLetter } from './accents';"""),
+  ("""  lastKeyAt: number | null;
+    lastWasCorrect: boolean;
+  }
+
+  export type FairCopyEvent = 'started' | 'correct' | 'error' | 'ignored' | 'fixed' | 'finished';
+
+  export function createFairCopy(text: string, limitMs: number | null = null): FairCopy {
+    return {
+      text,
+      limitMs,""","""  lastKeyAt: number | null;
+    lastWasCorrect: boolean;
+    /**
+     * Ink Race (M36): mistakes must be fixed. O
+  … (3065 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Typecheck passes. Tests for the new rules:
+
+<details><summary>6 tool calls</summary>
+
+- **Shell:** Add tests for the race typing rules
+
+  ```bash
+  sed -n 1,20p src/core/fairCopy.test.ts && cat >> src/core/fairCopy.test.ts <<'EOF'
+
+  describe('Ink Race rules (mustFix, forgiving)', () => {
+    const type = (test: ReturnType<typeof createFairCopy>, keys: string) => {
+      let now = 1000;
+      const events: string[] = [];
+      for (const k of keys) events.push(...(k === '\b' ? backspace(test, (now += 100)) : typeKey(test, k, (now += 100))));
+      return events;
+    };
+
+    it('lets a few wrong keys land, then blocks until Backspace', () => {
+      const test = createFairCopy('abcdefghij', null, { mustFix: true });
+      type(test, 'abX');
+      expect(correct
+  … (1437 more characters)
+  ```
+- **Shell:** Import correctPrefix and run Fair Copy tests
+
+  ```bash
+  sed -i '' 's/^  chainPassages,$/  chainPassages,\n  correctPrefix,/' src/core/fairCopy.test.ts && npx vitest run src/core/fairCopy 2>&1 | grep -E "×|Tests |AssertionError|expected" | head
+  ```
+- **Shell:** Read howToType contract and types
+
+  ```bash
+  sed -n 165,190p src/core/accents.ts; grep -n "export type Platform\|export type Language\|export const LANGUAGES" src/core/*.ts src/content/layouts/types.ts | head
+  ```
+- **Shell:** Read accentMethod
+
+  ```bash
+  sed -n 95,135p src/core/accents.ts
+  ```
+- **Shell:** Add stand-ins for ¿ ¡ and write race rules
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/core/fairCopy.ts'
+  s=open(p).read()
+  a="  if (test.forgiving && expected !== undefined && char !== expected && plainLetter(expected) === char) char = expected;"
+  assert a in s
+  s=s.replace(a,"  if (test.forgiving && expected !== undefined && char !== expected && standIn(expected) === char) char = expected;")
+  a="/** Characters typed right from the start"
+  s=s.replace(a,"""/** With `forgiving`, what may be typed for `expected`: the plain letter, or `? !` for `¿ ¡`. */
+  function standIn(expected: string): string {
+    if (expected === '¿') return '?';
+    if (expected === '¡') retu
+  … (3715 more characters)
+  ```
+- **Shell:** Make forgiving depend on the layout's own keys
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/core/race.ts'
+  s=open(p).read()
+  pairs=[("""/**
+   * Whether this player races with forgiving matching: some character in the
+   * passage isn't on their own keyboard (or needs Windows' US-International
+   * setting, which they may not have turned on), so they'd be stuck on it.
+   */""","""/**
+   * Whether this player races with forgiving matching: some character in the
+   * passage isn't on their own keyboard layout. Typing it the computer's way
+   * (Mac Option keys, Windows' US-International setting) isn't asked for
+   * mid-race, where there's no key help, so they'd be stuck on it.
+
+  … (520 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Now protocol v2 with the race messages:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Add race messages to the protocol
+
+  ```bash
+  sed -n 700,712p src/core/fairCopy.ts && python3 - <<'EOF'
+  p='src/core/net/protocol.ts'
+  s=open(p).read()
+  pairs=[
+  ("""import type { Lobby, LobbyPlayer } from './lobby';""","""import type { Lobby, LobbyPlayer } from './lobby';
+  import type { Racer, RacerResult } from '../race';
+  import { LANGUAGES, type Language } from '../languages';
+  import { isPassageId } from '../fairCopy';"""),
+  ("""export const PROTOCOL_VERSION = 1;""","""export const PROTOCOL_VERSION = 2;"""),
+  ("""  | { t: 'pong'; n: number; sentAt: number; guestAt: number }
+    | { t: 'leave' };""","""  | { t: 'pong'; n: number; sentAt: number;
+  … (3346 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Typecheck is clean. Tests for the race rules and the new messages:
+
+<details><summary>3 tool calls</summary>
+
+- **Shell:** Write race and protocol v2 tests and run core tests
+
+  ```bash
+  cat > src/core/race.test.ts <<'EOF'
+  import { describe, expect, it } from 'vitest';
+  import { layoutById } from '../content/layouts';
+  import { forPlatform } from '../content/layouts';
+  import { GAME_CONFIG } from './config';
+  import { applyFinish, applyProgress, createRace, isOver, markLeft, needsForgiving, standings } from './race';
+
+  const result = (ms: number) => ({ ms, netWpm: 40, accuracy: 0.95, errors: 1 });
+
+  describe('Ink Race', () => {
+    it('ranks finishers by time, then progress, then those who left', () => {
+      let race = createRace('austen-pride', 'en', 100, 0, ['host', 'p1', 'p2', 'p3'
+  … (3801 more characters)
+  ```
+- **Shell:** See which forgiving case failed and layout ids
+
+  ```bash
+  npx vitest run src/core/race 2>&1 | grep -B2 -A8 "AssertionError" | head -20; grep -n "id: '" src/content/layouts/*.ts | head
+  ```
+- **Shell:** Check the failing line and layout lookup
+
+  ```bash
+  sed -n 45,48p src/core/race.test.ts; grep -rn "id: \"\|id: '[a-z-]*'," src/content/layouts/*.ts | head; sed -n 60,80p src/content/layouts/index.ts
+  ```
+
+</details>
+
+### 🤖 Claude
+
+AZERTY can actually type `ñ` (with its tilde dead key), so my test was wrong, not the rule. I'll swap in Dvorak, which has no accent keys of its own:
+
+<details><summary>3 tool calls</summary>
+
+- **Shell:** Fix the test case and rerun core tests
+
+  ```bash
+  sed -i '' "s/    expect(needsForgiving('El niño.', forPlatform(layoutById('fr-azerty'), 'pc'), 'pc')).toBe(true);/    expect(needsForgiving('El niño.', forPlatform(layoutById('fr-azerty'), 'pc'), 'pc')).toBe(false);\n    expect(needsForgiving('El niño.', layoutById('dvorak'), 'pc')).toBe(true);/" src/core/race.test.ts && sed -i '' "/^import { layoutById } from '..\/content\/layouts';$/d; s/^import { forPlatform } from '..\/content\/layouts';/import { forPlatform, layoutById } from '..\/content\/layouts';/" src/core/race.test.ts && npx vitest run src/core 2>&1 | grep -E "×|Tests " | head
+  ```
+- **Shell:** Add race handling to host and guest
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/net/host.ts'
+  s=open(p).read()
+  pairs=[
+  ("""import { PROTOCOL_VERSION, clockSample, readGuestMessage, writeMessage, type HostMessage } from '../core/net/protocol';""","""import { PROTOCOL_VERSION, clockSample, readGuestMessage, writeMessage, type HostMessage } from '../core/net/protocol';
+  import { applyFinish, applyProgress, createRace, isOver, markLeft, type Race, type RacerResult } from '../core/race';
+  import type { Language } from '../core/languages';"""),
+  ("""/** A guest whose hello hasn't come before this, after connecting, is dropped. */""","""/** A clock shared in
+  … (7018 more characters)
+  ```
+- **Shell:** Fix test literal typing
+
+  ```bash
+  sed -i '' "s/const race = { t: 'race', passageId: 'austen-pride', lang: 'en', startAt: 123456.5, ids: \['host', 'p1'\] } as const;/const race = { t: 'race' as const, passageId: 'austen-pride', lang: 'en' as const, startAt: 123456.5, ids: ['host', 'p1'] };/" src/core/net/protocol.test.ts && npx tsc --noEmit 2>&1 | head -3
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Typecheck is clean. Now the race view. First, how `FairCopyView` builds the page and shows its card, so I can reuse it without its result card:
+
+<details><summary>5 tool calls</summary>
+
+- **Shell:** Read FairCopyView constructor and sync
+
+  ```bash
+  sed -n 185,420p src/render/fairCopyView.ts
+  ```
+- **Shell:** Read page geometry constants
+
+  ```bash
+  grep -n "export const \(FIRST_LINE_Y\|LINE_SPACING\|MARGIN_X\|WORLD_HEIGHT\|WORLD_WIDTH\)\|export function laneCount" -A3 src/core/world.ts | head -30; grep -n "insetLeft\|insetRight" src/core/config.ts
+  ```
+- **Shell:** Find badge colors and LineView placement
+
+  ```bash
+  grep -rn "crimson\|violet" src/render/*.ts src/ui/art.ts | head -8; sed -n 120,184p src/render/fairCopyView.ts
+  ```
+- **Shell:** Read badge color mapping
+
+  ```bash
+  sed -n 95,112p src/render/renderer.ts; sed -n 210,225p src/render/renderer.ts; grep -n "export function badgeSvg" -A15 src/ui/art.ts | head -20
+  ```
+- **Shell:** Read badge hues
+
+  ```bash
+  grep -n "const HUES" -A10 src/ui/art.ts
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Making `FairCopyView` race-aware: the passage two rows lower, and no heading, footer hints or result card:
+
+<details><summary>4 tool calls</summary>
+
+- **Shell:** Let FairCopyView make room for the race track
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/render/fairCopyView.ts'
+  s=open(p).read()
+  pairs=[
+  ("""  cosmetics: Cosmetics;
+    season: SeasonId | null;
+  }""","""  cosmetics: Cosmetics;
+    season: SeasonId | null;
+    /**
+     * Ink Race (M36): the passage starts two ruled lines down, under the race
+     * track (render/raceView.ts), with no heading, typing hints or result card;
+     * the race draws its own.
+     */
+    race?: boolean;
+  }
+
+  /** Ruled lines a race leaves empty above the passage, for the track. */
+  export const RACE_TOP_ROWS = 2;"""),
+  ("""  private record: FairCopyRecord | null = null;
+  ""","""  private record: FairCop
+  … (2158 more characters)
+  ```
+- **Shell:** Adjust the overflow warning and read theme colors
+
+  ```bash
+  sed -i '' 's/    if (setup.seconds === null \&\& wrapped.length > TEXT_LINES) console.warn(`Fair Copy: the passage needs ${wrapped.length} lines; the page has ${TEXT_LINES}.`);/    if (setup.seconds === null \&\& wrapped.length > TEXT_LINES - this.topRows) console.warn(`Fair Copy: the passage needs ${wrapped.length} lines; the page has ${TEXT_LINES - this.topRows}.`);/' src/render/fairCopyView.ts && grep -n "TEXT_LINES - this.topRows" src/render/fairCopyView.ts | head -2; grep -n "PASSAGES" src/core/fairCopy.ts | head -2; node -e "" ; grep -n "export const COLORS" -A30 src/render/theme.ts | he
+  … (6 more characters)
+  ```
+- **Shell:** Read palette keys and the Fair Copy card builder
+
+  ```bash
+  grep -n "interface Palette" -A30 src/render/theme.ts | head -34; sed -n 420,520p src/render/fairCopyView.ts
+  ```
+- **Shell:** Read the rest of the card (buttons) and palette
+
+  ```bash
+  sed -n 520,640p src/render/fairCopyView.ts; grep -n "^type Palette\|Palette =" -A3 src/render/theme.ts | head; grep -n "  [a-zA-Z]*: 0x" src/render/theme.ts | head -30
+  ```
+
+</details>
+
+### 🤖 Claude
+
+I have the view's structure. Writing `RaceView`: track strip, countdown and race card, composed around `FairCopyView`:
+
+<details><summary>2 tool calls</summary>
+
+- **Wrote** `src/render/raceView.ts`
+- **Shell:** Drop an unneeded helper and typecheck
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/render/raceView.ts'
+  s=open(p).read()
+  a="""
+    /** Live numbers for the page's HUD come from the page itself; this is the player's own result. */
+    static resultOf(test: FairCopy, now: number) {
+      return fairCopyResult(test, now);
+    }
+  """
+  assert a in s
+  s=s.replace(a,"")
+  s=s.replace("import { fairCopyResult, type FairCopy,","import { type FairCopy,")
+  open(p,'w').write(s)
+  EOF
+  npx tsc --noEmit 2>&1 | head -5
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Now the strings, in English, French and Spanish, plus the lobby's Start button:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Add race strings and drop the races-soon line
+
+  ```bash
+  python3 - <<'EOF'
+  import re
+  S={
+  'en':{
+  'together.start':'Start a race',
+  'together.needPlayers':'Invite at least one player, then start a race. Everyone races the same passage.',
+  'together.readyToRace':'Everyone races the same passage. First to finish wins!',
+  'race.you':'{name} (you)',
+  'race.left':'left',
+  'race.go':'Go!',
+  'race.getReady':'Get ready…',
+  'race.getReadyForgiving':'Get ready… Accents that aren’t on your keyboard can be typed without them.',
+  'race.waitingForOthers':'Finished! Waiting for the others…',
+  'race.footer':'Fix mistakes with Backspace to keep going · Esc leaves the race',
+  'r
+  … (3550 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Only the dialog still uses the old line; I'll fix that with the dialog changes. Now `RaceSession`:
+
+<details><summary>1 tool call</summary>
+
+- **Wrote** `src/raceSession.ts`
+
+</details>
+
+### 🤖 Claude
+
+Enter mid-race would type a wrong character (no passage has line breaks), so Enter will only act on the race card:
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Limit Enter to the card; find dialog spots to change
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/raceSession.ts'
+  s=open(p).read()
+  a="""          if (this.over && this.cardReady()) options.onAgain?.();
+            else if (this.started() && !isFinished(this.test)) this.react(typeKey(this.test, '\\n', performance.now()));"""
+  assert a in s
+  s=s.replace(a,"""          // Passages have no line breaks, so Enter only acts on the race card.
+            if (this.over && this.cardReady()) options.onAgain?.();""")
+  open(p,'w').write(s)
+  EOF
+  npx tsc --noEmit 2>&1 | grep -v playTogether | head -5; grep -n "options\.\|const startHosting\|const join = \|function close\|joined: ()\|host
+  … (42 more characters)
+  ```
+- **Read** `src/ui/playTogether.ts`
+
+</details>
+
+### 🤖 Claude
+
+Now the dialog: a Start button for the host, handing the live game to a race, and reopening on the lobby (or with an ended message) afterwards:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Add Start and hand-off to the Play together dialog
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/ui/playTogether.ts'
+  s=open(p).read()
+  pairs=[
+  ("""import { GuestGame, type GuestEnd } from '../net/guest';""","""import { GuestGame, type GuestEnd, type RaceStart } from '../net/guest';"""),
+  ("""  /** The hosting tab in this browser took that reply, so this tab can be closed. */
+    answerRelayed?: boolean;""","""  /** The hosting tab in this browser took that reply, so this tab can be closed. */
+    answerRelayed?: boolean;
+    /** Back from a race: open on this game's lobby. */
+    resume?: { host: HostGame } | { guest: GuestGame };
+    /** Back from a race that ended because t
+  … (4662 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Now `main.ts`. Here's how Fair Copy suspends the game and runs each frame:
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Find Fair Copy wiring and platform in main.ts
+
+  ```bash
+  grep -n "fairCopy\b\|fairCopy?\|fairCopy =\|let fairCopy" src/main.ts | head -30; sed -n 1150,1185p src/main.ts; grep -n "platform\b\|keyboardKind\|layoutPlatform\|const layout = " src/main.ts | head -8
+  ```
+- **Shell:** Read Fair Copy start, sync and the together opener
+
+  ```bash
+  sed -n 1126,1150p src/main.ts; sed -n 1425,1440p src/main.ts; sed -n 1830,1840p src/main.ts; sed -n 1898,1906p src/main.ts; grep -n "const openTogether" -A25 src/main.ts | head -30
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Wiring the race into `main.ts`. First, a small change so host race listeners get the "over" flag and can be cleared between races:
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Pass the over flag to host race listeners
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/net/host.ts'
+  s=open(p).read()
+  pairs=[
+  ("""  private raceListeners: ((race: Race) => void)[] = [];""","""  private raceListeners: ((race: Race, over: boolean) => void)[] = [];"""),
+  ("""  onRace(listener: (race: Race) => void): void {
+      this.raceListeners.push(listener);
+    }""","""  onRace(listener: (race: Race, over: boolean) => void): void {
+      this.raceListeners.push(listener);
+    }
+
+    /** Drops race listeners (before a new race session registers its own). */
+    clearRaceListeners(): void {
+      this.raceListeners = [];
+    }"""),
+  ("""    for (const l of this.raceListen
+  … (268 more characters)
+  ```
+- **Shell:** Run races from main.ts for host and guest
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/main.ts'
+  s=open(p).read()
+  pairs=[
+  ("""import { relayAnswer } from './net/answerRelay';""","""import { relayAnswer } from './net/answerRelay';
+  import { RaceSession, type RaceSessionOptions } from './raceSession';
+  import type { RaceLane } from './render/raceView';
+  import { needsForgiving } from './core/race';
+  import { clockNow, type HostGame } from './net/host';
+  import type { GuestEnd, GuestGame, RaceStart } from './net/guest';
+  import type { Lobby } from './core/net/lobby';"""),
+  ("""  const openTogether = (link: { joinCode?: string; strayAnswer?: string; answerRelayed?: 
+  … (5414 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+A leftover import to remove. Then the `?race=demo` dev link: two bots, Ada and Sam, at set speeds, with `&bots=45,30` to change the speeds:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Add the dev race demo with bots
+
+  ```bash
+  grep -n "^import { GAME_CONFIG\|GAME_CONFIG," src/main.ts | head -2; python3 - <<'EOF'
+  p='src/main.ts'
+  s=open(p).read()
+  pairs=[
+  ("""import { needsForgiving } from './core/race';""","""import { needsForgiving, type Racer } from './core/race';"""),
+  ("""    if (fairCopyLink !== undefined) startFairCopy(fairCopyLink, firstPassage);""","""    if (fairCopyLink !== undefined) startFairCopy(fairCopyLink, firstPassage);
+      // `?race=demo` races two bots (no network), for screenshots: `&bots=45,30` sets their WPM.
+      if (params.get('race') === 'demo') {
+        const speeds = (params.get('bots') ?? '45,
+  … (2127 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Typecheck and lint are clean. Trying the demo race in the browser:
+
+<details><summary>1 tool call</summary>
+
+- **browser_batch** `{"actions":[{"name":"navigate","input":{"url":"http://localhost:5173/?race=demo&passage=austen-pride"}},{"name":"computer","input":{"action":"wait","duration":1}},{"name":"computer","input":{"action":"screenshot","scale":0.6}}]}`
+
+</details>
+
+### 🤖 Claude
+
+The countdown, track strip and lowered passage all show. Typing part of the passage with the dev helper (with one mistake) to see the race in progress:
+
+<details><summary>4 tool calls</summary>
+
+- **javascript_tool** `{"action":"javascript_exec","text":"await new Promise(r => setTimeout(r, 1500));\nwindow.race.play('It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However littel');\nconst t = window.race.test(); ({ buffer: t.buffer.length, error
+… (16 more characters)`
+- **computer** `{"action":"screenshot"}`
+- **javascript_tool** `{"action":"javascript_exec","text":"const t = window.race.test();\nwindow.race.play('\\b\\b' + t.text.slice(130), 30);\nawait new Promise(r => setTimeout(r, 300));\n({ finished: t.finishedAt !== null, mistakesLeft: [...t.buffer].filter((c, i) => c !== t.text[i]).length })"}`
+- **computer** `{"action":"screenshot","scale":0.6}`
+
+</details>
+
+### 🤖 Claude
+
+The finish shows "1st" by the flag and "Finished! Waiting for the others…". Giving the strip more room, then a run with fast bots to reach the card:
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Make the track strip roomier
+
+  ```bash
+  python3 - <<'EOF'
+  def edit(p, pairs):
+      s=open(p).read()
+      for a,b in pairs:
+          assert a in s, (p,a[:60]); s=s.replace(a,b,1)
+      open(p,'w').write(s)
+  edit('src/core/config.ts',[("track: { laneHeight: 22, top: 14, nameWidth: 120, dotRadius: 7 },","track: { laneHeight: 26, top: 56, nameWidth: 150, dotRadius: 8 },")])
+  edit('src/render/raceView.ts',[
+  ("    const top = 48;","    const top = TRACK.top;"),
+  ("style: { fontFamily: TEXT_FONT, fontSize: 15, fontWeight: lane.you ? '700' : '600', fill: COLORS.ink },","style: { fontFamily: TEXT_FONT, fontSize: 17, fontWeight: lane.you ? '700' : '6
+  … (35 more characters)
+  ```
+- **browser_batch** `{"actions":[{"name":"navigate","input":{"url":"http://localhost:5173/?race=demo&passage=twain-huck&bots=900,700,500"}},{"name":"computer","input":{"action":"wait","duration":5}},{"name":"javascript_tool","input":{"action":"javascript_exec","text":"window.race.play('You don\\'t know about me without 
+… (152 more characters)`
+
+</details>
+
+### 🤖 Claude
+
+Four lanes fit above the passage, with places by the flag. The card waits for everyone, so I'll finish my own run:
+
+<details><summary>2 tool calls</summary>
+
+- **javascript_tool** `{"action":"javascript_exec","text":"const t = window.race.test(); window.race.play(t.text.slice(t.buffer.length), 40); await new Promise(r => setTimeout(r, 800)); 'done'"}`
+- **computer** `{"action":"zoom","region":[0,387,800,838]}`
+
+</details>
+
+### 🤖 Claude
+
+The race card works: places, ink drops, speed, accuracy, time, and the host's Race again / Back to the lobby. Now a real race between two tabs over WebRTC. Hosting in this tab:
+
+<details><summary>4 tool calls</summary>
+
+- **browser_batch** `{"actions":[{"name":"navigate","input":{"url":"http://localhost:5173/"}},{"name":"computer","input":{"action":"wait","duration":2}},{"name":"computer","input":{"action":"key","text":"p","action_summary":"Opens Play together"}},{"name":"computer","input":{"action":"wait","duration":1}},{"name":"compu
+… (267 more characters)`
+- **tabs_create** `{}`
+- **browser_batch** `{"actions":[{"name":"navigate","input":{"tabId":"tab-1","url":"http://localhost:5173/#join=AQAEKFKTGGS_Q9iiKDwGC9qVtlAteXJT1QD8WQgO3A_KVg24dRAU_u0faXrtAhgMNbWnnIoB2dOf_AIAd1fGft0pSZitFYP7XfJmAOdgACV2ltAbuU8vu-BrjyDN-PzO6Kz1"}},{"name":"computer","input":{"tabId":"tab-1","action":"wait","duration":4}
+… (140 more characters)`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"seed","text":"const input = document.querySelector('.pt-paste'); input.value = 'AQMEdJeLGARN976js0tj-E0IFoNbt-3tHgDxxBku0_s_dNKocRuHmnOjPqYKxwKJwXWkd60rHZe_xAIAeS1BVXK6Rr6jF7mkOqoifcC-ALivB1XvMUkRppUZgzY6tzzce8Nj';\ndocument.querySelector('[data-id=\"connect\"]')
+… (177 more characters)`
+
+</details>
+
+### 🤖 Claude
+
+The Start button appeared once a second player joined. Screenshot of the host lobby, then Start:
+
+<details><summary>6 tool calls</summary>
+
+- **computer** `{"action":"zoom","region":[0,300,800,925],"scale":0.8}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"seed","text":"document.querySelector('[data-id=\"start\"]').click();\nawait new Promise(r => setTimeout(r, 600));\n({ dialog: !!document.querySelector('.play-together'), hostRace: !!window.race })"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"tab-1","text":"await new Promise(r => setTimeout(r, 500));\n({ dialog: !!document.querySelector('.play-together'), guestRace: !!window.race, text: window.race?.test().text.slice(0, 50) })"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"tab-1","text":"await new Promise(r => setTimeout(r, 4500));\nconst t = window.race.test(); window.race.play(t.text, 60);\n({ finished: t.finishedAt !== null })"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"seed","text":"const t = window.race.test(); window.race.play(t.text, 80);\nawait new Promise(r => setTimeout(r, 1500));\n({ finished: t.finishedAt !== null })"}`
+- **computer** `{"action":"zoom","tabId":"seed","region":[0,387,800,838],"scale":0.8}`
+
+</details>
+
+### 🤖 Claude
+
+The host's card has the guest 1st and the host 2nd, which is right. The guest's side:
+
+<details><summary>1 tool call</summary>
+
+- **computer** `{"action":"zoom","tabId":"tab-1","region":[0,387,800,838],"scale":0.8}`
+
+</details>
+
+### 🤖 Claude
+
+Both cards agree. Next, Race again: the host presses Enter and the guest should follow into a new passage:
+
+<details><summary>3 tool calls</summary>
+
+- **computer** `{"action":"key","tabId":"seed","text":"Return","action_summary":"Starts another race from the race card"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"tab-1","text":"await new Promise(r => setTimeout(r, 800));\n({ text: window.race?.test().text.slice(0, 40), typed: window.race?.test().buffer.length })"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"seed","text":"({ text: window.race?.test().text.slice(0, 40) })"}`
+
+</details>
+
+### 🤖 Claude
+
+Race again works on both sides. Now the guest presses Esc mid-race: it should show as "left" for the host and land back in the lobby.
+
+<details><summary>3 tool calls</summary>
+
+- **computer** `{"action":"key","tabId":"tab-1","text":"Escape","action_summary":"Leaves the race as the guest"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"tab-1","text":"await new Promise(r => setTimeout(r, 1000));\n({ dialog: document.querySelector('.play-together .pt-body')?.textContent })"}`
+- **computer** `{"action":"zoom","tabId":"seed","region":[0,387,800,838],"scale":0.8}`
+
+</details>
+
+### 🤖 Claude
+
+The guest is back in the lobby and shows as "left" on the host's track. Last path: the host's tab disappears mid-race. The host returns to the lobby, starts again, and then I close the host's tab:
+
+<details><summary>6 tool calls</summary>
+
+- **computer** `{"action":"key","tabId":"seed","text":"Escape","action_summary":"Takes everyone back to the lobby as host"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"seed","text":"await new Promise(r => setTimeout(r, 2500));\nconst start = document.querySelector('[data-id=\"start\"]');\nconst players = [...document.querySelectorAll('.pt-name')].map(n => n.textContent);\nstart?.click();\nawait new Promise(r => setTimeout(r, 50
+… (98 more characters)`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"tab-1","text":"await new Promise(r => setTimeout(r, 500)); ({ racing: !!window.race && !document.querySelector('.play-together') })"}`
+- **tabs_close** `{"tabId":"seed"}`
+- **javascript_tool** `{"action":"javascript_exec","tabId":"tab-1","text":"await new Promise(r => setTimeout(r, 9500)); document.querySelector('.play-together .pt-body')?.textContent ?? 'no dialog'"}`
+- **read_console_messages** `{"tabId":"tab-1","onlyErrors":true}`
+
+</details>
+
+### 🤖 Claude
+
+Every path works with no console errors: the host's tab vanishing mid-race brought the guest back to "Lost touch with the host." Now fixing the leftover reply code in the paste box:
+
+<details><summary>3 tool calls</summary>
+
+- **Shell:** Clear the used reply code; look at snapshot screens
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/ui/playTogether.ts'
+  s=open(p).read()
+  a="""    const joined = hosting.lobby.players.find((p) => !before.has(p.id));
+      await newInvite();"""
+  assert a in s
+  s=s.replace(a,"""    const joined = hosting.lobby.players.find((p) => !before.has(p.id));
+      // The code was used: clear it, so the next player's reply goes into an empty box.
+      const paste = body.querySelector<HTMLInputElement>('.pt-paste');
+      if (paste) paste.value = '';
+      await newInvite();""")
+  open(p,'w').write(s)
+  EOF
+  grep -n "fairCopy\|name: '" scripts/snapshots.ts | head -30
+  ```
+- **Shell:** See how the snapshots script lists screens
+
+  ```bash
+  grep -n "^  \['\|^  { id\|'page-done'\|'transfer'\|'play'" scripts/snapshots.ts | head -20; sed -n 1,40p scripts/snapshots.ts
+  ```
+- **Shell:** Read the snapshot tour steps
+
+  ```bash
+  sed -n 300,380p scripts/snapshots.ts; grep -n "goto\|type Step\|'goto'\|step.goto\|navigate" scripts/snapshots.ts | head -20
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Adding the race screens to the snapshot tour: the Play together dialog, the countdown, mid-race, and the race card.
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Add race screens to the snapshot tour
+
+  ```bash
+  python3 - <<'EOF'
+  p='scripts/snapshots.ts'
+  s=open(p).read()
+  a="""  // The Daily Page (M20), with a sample streak."""
+  assert a in s
+  s=s.replace(a,"""  // Play together (M35) and Ink Race (M36): the dialog, then a race against two bots (`?race=demo`):
+    // the countdown, partway with a mistake to fix, and the race card.
+    { click: 'Play together' }, { shot: 'play-together' }, { key: 'Escape' },
+    { open: '?season=none&race=demo&passage=twain-huck&bots=40,30' }, { wait: 1200 }, { shot: 'race-countdown' },
+    { wait: 2600 }, { eval: RACE_TYPE_SOME }, { wait: 6000 }, { shot: 'race' },
+    { open: '?se
+  … (735 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Now the docs and the 2.33.0 release entry:
+
+<details><summary>4 tool calls</summary>
+
+- **Shell:** Find where Fair Copy sits in DESIGN.md
+
+  ```bash
+  grep -n "Fair Copy\|^## \|^### " docs/DESIGN.md | head -40
+  ```
+- **Shell:** Read the UI & Screens table
+
+  ```bash
+  sed -n 79,88p docs/DESIGN.md
+  ```
+- **Shell:** Update DESIGN and REQUIREMENTS, add the 2.33.0 release
+
+  ```bash
+  python3 - <<'EOF'
+  def edit(p, pairs):
+      s=open(p).read()
+      for a,b in pairs:
+          assert a in s, (p,a[:60]); s=s.replace(a,b,1)
+      open(p,'w').write(s)
+  edit('docs/DESIGN.md',[("""- **Pause:** a bookmark ribbon drops down.
+  ""","""- **Pause:** a bookmark ribbon drops down.
+  - **Ink Race (M36):** the Fair Copy page with the passage two ruled lines lower. Above it is a **track strip**, one lane per racer: their name, a faint line, and their ink drop (in their badge color, ringed in red for you) sliding toward a red finish flag. Places are written in red pen by the flag as racers finish. A b
+  … (2214 more characters)
+  ```
+- **Shell:** Use today's local date, then run check and build
+
+  ```bash
+  sed -i '' "s/    version: '2.33.0',\n    date: '2026-11-25',//" src/core/releases.ts && python3 - <<'EOF'
+  p='src/core/releases.ts'
+  s=open(p).read()
+  s=s.replace("version: '2.33.0',\n    date: '2026-11-25',","version: '2.33.0',\n    date: '2026-11-24',",1)
+  open(p,'w').write(s)
+  EOF
+  npm run check 2>&1 | grep -E "error|✖|Tests |Test Files|FAIL" | head; npm run build 2>&1 | grep -E "error|precache"
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Check (635 tests) and build pass. Now the phone-width check of the demo race:
+
+<details><summary>1 tool call</summary>
+
+- **browser_batch** `{"actions":[{"name":"resize_window","input":{"tabId":"tab-1","preset":"mobile"}},{"name":"navigate","input":{"tabId":"tab-1","url":"http://localhost:5173/?race=demo&passage=twain-huck&bots=60,40"}},{"name":"computer","input":{"tabId":"tab-1","action":"wait","duration":5}},{"name":"javascript_tool","
+… (297 more characters)`
+
+</details>
+
+### 🤖 Claude
+
+The phone's "Made for a keyboard" notice is on top. Dismissing it and zooming in on the race:
+
+<details><summary>3 tool calls</summary>
+
+- **browser_batch** `{"actions":[{"name":"find","input":{"tabId":"tab-1","query":"Play anyway"}}]}`
+- **browser_batch** `{"actions":[{"name":"computer","input":{"tabId":"tab-1","action":"left_click","ref":"ref_52","action_summary":"Dismisses the keyboard notice"}},{"name":"computer","input":{"tabId":"tab-1","action":"wait","duration":1}},{"name":"computer","input":{"tabId":"tab-1","action":"zoom","region":[0,590,750,1
+… (8 more characters)`
+- **resize_window** `{"tabId":"tab-1","preset":"desktop"}`
+
+</details>
+
+### 🤖 Claude
+
+The track and the red mistake marks are still readable at phone width. Per your note to see designs before I polish visuals, here are the key screens:
+
+<details><summary>2 tool calls</summary>
+
+- **Shell:** Collect race screenshots into the scratchpad
+
+  ```bash
+  d=<temp file> mkdir -p $d; r=/Users/[removed]/.claude/projects/-Users-[removed]-projects-inky-keys/e203a3da-56a2-4f7a-b9c2-ef713e209740/tool-results; cp $r/mcp-Claude_Browser-blob-1795572667549-u58icq.png $d/1-lobby-start.png; cp $r/mcp-Claude_Browser-blob-1795572807485-yh4fxz.png $d/2-mid-race-with-mistake.png; cp $r/mcp-Claude_Browser-blob-1795572637550-hqajws.png $d/3-race-card-host.png; cp $r/mcp-Claude_Browser-blob-1795572689010-gl4dfp.png $d/4-race-card-guest.png; ls $d
+  ```
+- **SendUserFile** `{"files":["<temp file>","<temp file>","/
+… (463 more characters)`
+
+</details>
+
+### 🤖 Claude
+
+Ink Race is built on `feat/m36-ink-race`. A full race between two tabs over a real WebRTC connection worked from start to finish, and checks (635 tests) and the build pass. Nothing is committed yet, and it hasn't been tried on two laptops. I've sent screenshots of the lobby, a race in progress and both race cards; per your note, I'm waiting for your feedback on the look before finishing.
+
+**How a race plays:**
+- **Start:** once someone has joined, the host sees **Start a race**. The passage comes from the host's words language, and both screens count down 3-2-1 together.
+- **Mistakes must be fixed:** after a wrong key, 5 more keys can land in red, then the keyboard stops until you Backspace. You only finish when every character is right, so mashing keys can't win.
+- **Accents:** accents (and `¿ ¡`) that aren't on a player's own keyboard layout can be typed without them in a race, so a Mac or US-keyboard player isn't stuck on `é` with no key help.
+- **Track strip:** above the passage, one lane per racer with their ink drop heading for a red flag. Your drop is ringed in red, and places appear in red pen as people finish.
+- **Race card:** places, speed, accuracy and time. The host gets **Race again** (Enter) and **Back to the lobby** (Esc); guests can go back to the lobby.
+- **Leaving:** a guest's Esc leaves the race and shows them as "left"; the host's Esc takes everyone back to the lobby. If the host's tab disappears, the guest sees "Lost touch with the host."
+- **Fairness:** each player's time runs from "Go" on their own clock, so a small clock difference between devices can't change who won.
+- **Saving:** nothing is saved during the beta.
+
+**Tested in two tabs:**
+- Joining and starting.
+- Both finishing, with both cards agreeing on the order.
+- Race again moving both tabs to a new passage.
+- A guest leaving mid-race.
+- The host's tab closing mid-race.
+
+**Fixed along the way:**
+- A joiner's used reply code was left in the host's paste box.
+- The track strip was too cramped, so the lanes got more room.
+
+**Still to do:**
+1. **Your feedback on the look.**
+2. **Snapshots:** `npm run snapshots -- m36` and `-- latest`, plus `docs/progression/README.md`. I've already added the Play together dialog, the countdown, a race in progress and the race card to the snapshot tour. The dev link `?race=demo` races two bots for these.
+3. **Commit, merge and ship 2.33.0.** The version bump, release note, and the REQUIREMENTS and DESIGN updates are already in place.
+4. **Your two-laptop test**, as with 2.32.0. Two tabs can't fully stand in for it: a background tab's screen doesn't redraw, so I checked the guest's side by reading its state and through finish messages.
+
+The main new files are [race.ts](src/core/race.ts), [raceSession.ts](src/raceSession.ts) and [raceView.ts](src/render/raceView.ts).
+
+## 🧑 Prompt
+
+> Finish and ship
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Read the progression README steps
+
+  ```bash
+  grep -n "^## \|^### " docs/progression/README.md | tail -12; tail -40 docs/progression/README.md
+  ```
+
+</details>
+
+### 🤖 Claude
+
+Running the snapshot tour for m36 (this drives headless Chrome through every screen, so it takes a few minutes):
+
+<details><summary>6 tool calls</summary>
+
+- **Shell:** Take the m36 snapshots
+
+  ```bash
+  npm run snapshots -- m36 2>&1 | tail -15
+  ```
+- **Shell:** Confirm the race shots were taken
+
+  ```bash
+  ls docs/progression/m36 | grep -E "race|together|menu.png"
+  ```
+- **Read** `docs/progression/m36/race.png`
+- **Read** `docs/progression/m36/race-card.png`
+- **Read** `docs/progression/m36/race-countdown.png`
+- **Read** `docs/progression/m36/play-together.png`
+
+</details>
+
+### 🤖 Claude
+
+All four race shots look right. Now the "latest" set:
+
+<details><summary>4 tool calls</summary>
+
+- **Shell:** Refresh the latest snapshots
+
+  ```bash
+  npm run snapshots -- latest 2>&1 | tail -3 && git status --short docs/progression | head -5 && git status --short docs/progression | wc -l
+  ```
+- **Shell:** See which latest shots are tracked and used
+
+  ```bash
+  git ls-files docs/progression/latest | wc -l; ls docs/progression/latest | wc -l; git status --short docs/progression | grep "??"; grep -n "latest/" docs/progression/README.md | head -5; grep -n "^## \|^| Latest\|Side by side" docs/progression/README.md | head
+  ```
+- **Shell:** Add the M35–M36 section to the progression README
+
+  ```bash
+  python3 - <<'EOF'
+  p='docs/progression/README.md'
+  s=open(p).read()
+  a="## Keeping this up to date"
+  sec='''### M35–M36: Play together and Ink Race (2.32.0–2.33.0, beta)
+
+  | Play together | The countdown |
+  |---|---|
+  | <img src="m36/play-together.png" width="420" alt="The Play together dialog with a Beta badge: a note that it is new and still being tested, Host a game (invite up to 3 players) and Join a game (use the code from the host), and a line that the computers talk directly over the network and nothing goes to the internet"> | <img src="m36/race-countdown.png" width="420" alt="An Ink Race abo
+  … (2862 more characters)
+  ```
+- **Shell:** Check, build, export and scan the transcript
+
+  ```bash
+  npm run check 2>&1 | grep -E "error|Tests |Test Files|FAIL"; npm run build 2>&1 | grep -E "error|precache"; npm run transcript 2>&1 | tail -2; f=$(ls -t docs/transcripts/*e203a3da*.md | head -1); grep -nEi "[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}" $f | grep -v "noreply@anthropic" | head -3; grep -nE "/Users/[a-z]|/private/tmp" $f | grep -v "\[removed\]" | head -3; grep -nEo "(ghp_|gho_|sk-|xox[bp]-|AKIA)[A-Za-z0-9_-]{8,}" $f | head -3; git status --short docs/transcripts
   ```
 
 </details>

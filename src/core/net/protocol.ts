@@ -8,9 +8,12 @@
  * different version, or not be the game at all.
  */
 import type { Lobby, LobbyPlayer } from './lobby';
+import type { Racer, RacerResult } from '../race';
+import { LANGUAGES, type Language } from '../languages';
+import { isPassageId } from '../fairCopy';
 
 /** Bump when a message changes shape. Devices on different protocols can't play together. */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 /** Why a host turned a player away. */
 export type RefuseReason = 'version' | 'full';
@@ -18,6 +21,9 @@ export type RefuseReason = 'version' | 'full';
 export type GuestMessage =
   | { t: 'hello'; protocol: number; app: string; name: string; badge: string }
   | { t: 'pong'; n: number; sentAt: number; guestAt: number }
+  | { t: 'progress'; at: number }
+  | { t: 'finish'; result: RacerResult }
+  | { t: 'leaveRace' }
   | { t: 'leave' };
 
 export type HostMessage =
@@ -25,6 +31,10 @@ export type HostMessage =
   | { t: 'lobby'; lobby: Lobby }
   | { t: 'ping'; n: number; sentAt: number }
   | { t: 'refuse'; reason: RefuseReason; app: string }
+  /** A race starts: `startAt` is on the receiving guest's clock. */
+  | { t: 'race'; passageId: string; lang: Language; startAt: number; ids: string[] }
+  | { t: 'standings'; racers: Racer[]; over: boolean }
+  | { t: 'toLobby' }
   | { t: 'leave' };
 
 /** The longest message accepted; a lobby of four is well under 1 KB. */
@@ -45,6 +55,28 @@ function parse(data: unknown): Fields | null {
   } catch {
     return null;
   }
+}
+
+function readResult(v: unknown): RacerResult | null {
+  if (v === null || typeof v !== 'object') return null;
+  const { ms, netWpm, accuracy, errors } = v as Fields;
+  if (!isNumber(ms) || !isNumber(netWpm) || !isNumber(accuracy) || !isNumber(errors)) return null;
+  if (ms < 0 || netWpm < 0 || accuracy < 0 || accuracy > 1 || errors < 0) return null;
+  return { ms, netWpm, accuracy, errors };
+}
+
+function readRacers(v: unknown): Racer[] | null {
+  if (!Array.isArray(v) || v.length === 0 || v.length > 8) return null;
+  const out: Racer[] = [];
+  for (const r of v as unknown[]) {
+    if (r === null || typeof r !== 'object') return null;
+    const { id, at, result, left } = r as Fields;
+    if (!isId(id) || !isNumber(at) || typeof left !== 'boolean') return null;
+    const read = result === null ? null : readResult(result);
+    if (result !== null && !read) return null;
+    out.push({ id, at, result: read, left });
+  }
+  return out;
 }
 
 function readLobby(v: unknown): Lobby | null {
@@ -79,6 +111,14 @@ export function readGuestMessage(data: unknown): GuestMessage | null {
       };
     case 'pong':
       return isNumber(m.n) && isNumber(m.sentAt) && isNumber(m.guestAt) ? { t: 'pong', n: m.n, sentAt: m.sentAt, guestAt: m.guestAt } : null;
+    case 'progress':
+      return isNumber(m.at) && m.at >= 0 ? { t: 'progress', at: m.at } : null;
+    case 'finish': {
+      const result = readResult(m.result);
+      return result ? { t: 'finish', result } : null;
+    }
+    case 'leaveRace':
+      return { t: 'leaveRace' };
     case 'leave':
       return { t: 'leave' };
     default:
@@ -103,6 +143,17 @@ export function readHostMessage(data: unknown): HostMessage | null {
       return isNumber(m.n) && isNumber(m.sentAt) ? { t: 'ping', n: m.n, sentAt: m.sentAt } : null;
     case 'refuse':
       return m.reason === 'version' || m.reason === 'full' ? { t: 'refuse', reason: m.reason, app: isText(m.app, 20) ? m.app : '?' } : null;
+    case 'race': {
+      const ids = Array.isArray(m.ids) && m.ids.length > 0 && m.ids.length <= 8 && m.ids.every(isId) ? (m.ids as string[]) : null;
+      const lang = LANGUAGES.find((l) => l === m.lang);
+      return ids && lang && isPassageId(m.passageId) && isNumber(m.startAt) ? { t: 'race', passageId: m.passageId, lang, startAt: m.startAt, ids } : null;
+    }
+    case 'standings': {
+      const racers = readRacers(m.racers);
+      return racers && typeof m.over === 'boolean' ? { t: 'standings', racers, over: m.over } : null;
+    }
+    case 'toLobby':
+      return { t: 'toLobby' };
     case 'leave':
       return { t: 'leave' };
     default:
