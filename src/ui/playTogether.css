@@ -143,10 +143,18 @@
   display: none;
 }
 
+.pt-qr-code {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .pt-qr-code svg {
   display: block;
-  width: 196px;
-  height: 196px;
+  /* Big enough for a webcam across a table: about 6 px a module. */
+  width: min(360px, 100%, 60vh);
+  height: auto;
+  aspect-ratio: 1;
   border-radius: 6px;
 }
 

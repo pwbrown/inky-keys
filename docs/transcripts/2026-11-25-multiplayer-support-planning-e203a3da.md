@@ -1,6 +1,6 @@
 # Multiplayer support planning
 
-Claude Code session started 2026-11-25. 6 prompts.
+Claude Code session started 2026-11-25. 7 prompts.
 
 Exported with `npm run transcript`. Tool output, hidden reasoning and system prompts are left out; commands are cut short when long. Private details (email, home folder) are removed.
 
@@ -2776,12 +2776,117 @@ jsQR builds as its own 48 KB chunk that loads on demand. Checking it's precached
 
 Precached, and check and build pass. Exporting the transcript and scanning it before committing:
 
-<details><summary>1 tool call</summary>
+<details><summary>3 tool calls</summary>
 
 - **Shell:** Export transcript and scan it for private details
 
   ```bash
   npm run transcript 2>&1 | tail -3 && git status --short docs/transcripts | head && F=$(git status --porcelain docs/transcripts | awk '{print $2}'); for f in $F; do [ -f "$f" ] && grep -n -E -i "[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}|/Users/[a-z]+|gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY" "$f" | grep -v -E "noreply@anthropic.com|@types/|@fontsource|@eslint|@anthropic-ai" | head -5; done; echo scan-done
+  ```
+- **Shell:** Scan the transcript diff for names and secrets
+
+  ```bash
+  git diff docs/transcripts | grep "^+" | grep -n -i -E "[removed]|brown|token|password|secret|api[_-]?key" | head -10; echo ---
+  ```
+- **Shell:** Commit, merge, tag and push 2.34.0
+
+  ```bash
+  git add -A && git commit -q -F - <<'EOF'
+  Play together: QR codes to show and scan (2.34.0)
+
+  - Our own QR encoder (src/core/qr.ts), tested by reading codes back with jsQR
+  - Each handshake code can show as a QR of its link; a phone camera opens it directly
+  - Scan QR code reads the other player's QR with the camera (jsQR, loaded on demand and precached)
+  - Camera on only while scanning; Listen and Scan turn each other off
+  - Strings in en/fr/es; PRIVACY (and fr/es pages), CREDITS, jsQR license, REQUIREMENTS §13e
+  - Release 2.34.0
+
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+  EOF
+  git check
+  … (205 more characters)
+  ```
+
+</details>
+
+### 🤖 Claude
+
+I've added QR pairing to Play together and shipped it as **2.34.0**: commit `3a8b8fd` and tag `v2.34.0` are pushed to `main`, so it should reach inkykeys.com once the deploy finishes. Checks (643 tests) and the build passed. I haven't tried it with a real phone or webcam yet.
+
+**What players get:**
+- **Show QR code** appears next to Copy link and Copy code. The QR holds the whole join or reply link, so a phone or tablet camera opens it straight away. It stays shown when the host makes the next invite.
+- **Scan QR code** appears next to Listen. It turns on the camera, reads the other screen's QR and connects. If it reads your own invite, it says so and keeps looking. If the camera is refused, it asks you to paste the code instead.
+- The camera only runs while scanning. Scan and Listen turn each other off, and the camera also goes off once a code is read or the dialog closes.
+
+**How it's built:**
+- The QR codes are drawn by a small encoder of our own in `src/core/qr.ts`. The tests read its codes back with jsQR at every error-correction level, up to version 15.
+- Scanning uses jsQR (Apache-2.0). It loads only when someone presses Scan, and the service worker caches it, so it works offline.
+- I added the jsQR credit and license, a camera section on the privacy pages (en, fr and es), and the new strings in all three languages. I also updated REQUIREMENTS §13e, which had said there'd be no webcam pairing.
+
+**What I tested:** in two browser tabs I gave each tab a fake camera showing the other's QR, tilted. The guest read the host's invite, the host read the guest's reply, and they connected. I also checked the wrong-code message and the refused-camera case. There were no console errors.
+
+**Your test:**
+1. Scan a host's QR with a phone's own camera app and check the link opens and joins.
+2. Hold one laptop's screen up to the other's webcam. A small, dim or glossy screen is the likely problem.
+
+I didn't take new snapshots, because this wasn't a milestone.
+
+## 🧑 Prompt
+
+> make the QR code much larger and ship it
+
+<details><summary>5 tool calls</summary>
+
+- **Shell:** Branch and enlarge QR code CSS
+
+  ```bash
+  git checkout -q -b fix/bigger-qr && python3 - <<'EOF'
+  p='src/ui/playTogether.css'; s=open(p).read()
+  a="""  width: 196px;
+    height: 196px;"""
+  assert s.count(a)==1
+  s=s.replace(a,"""  /* Big enough for a webcam across a table: about 6 px a module. */
+    width: min(360px, 100%, 60vh);
+    height: auto;
+    aspect-ratio: 1;""")
+  open(p,'w').write(s)
+  EOF
+  grep -n "pt-qr-code" -A8 src/ui/playTogether.css
+  ```
+- **Shell:** Let the QR wrapper span the dialog width
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/ui/playTogether.css'; s=open(p).read()
+  s=s.replace(".pt-qr-code svg {",".pt-qr-code {\n  display: flex;\n  justify-content: center;\n  width: 100%;\n}\n\n.pt-qr-code svg {",1)
+  open(p,'w').write(s)
+  EOF
+  echo ok
+  ```
+- **javascript_tool** `{"tabId":"seed","action":"javascript_exec","text":"\nconst wait = (ms) => new Promise(r=>setTimeout(r,ms));\nlocation.reload(); \n"}`
+- **javascript_tool** `{"tabId":"seed","action":"javascript_exec","text":"\nconst wait = (ms) => new Promise(r=>setTimeout(r,ms));\nawait wait(1500);\n[...document.querySelectorAll('button')].find(e=>e.textContent.trim()==='Got it')?.click();\nawait wait(300);\n[...document.querySelectorAll('*')].find(e=>e.children.length
+… (429 more characters)`
+- **computer** `{"tabId":"seed","action":"screenshot","scale":0.6}`
+
+</details>
+
+### 🤖 Claude
+
+The QR is now 360 px across, up from 196 px. Shipping it:
+
+<details><summary>1 tool call</summary>
+
+- **Shell:** Release 2.34.1, check, build, export and scan transcript
+
+  ```bash
+  python3 - <<'EOF'
+  p='src/core/releases.ts'; s=open(p).read()
+  a="export const RELEASES: readonly Release[] = [\n"
+  s=s.replace(a,a+"  {\n    version: '2.34.1',\n    date: '2026-11-27',\n    notes: [],\n    fixes: true,\n  },\n",1)
+  open(p,'w').write(s)
+  EOF
+  npm version 2.34.1 --no-git-tag-version >/dev/null && npm run check 2>&1 | grep -E "error|Tests |FAIL" | head; npm run build 2>&1 | grep -E "error|built in"; npm run transcript >/dev/null 2>&1; git diff docs/transcripts | grep "^+" | grep -n -i -E "[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}|/Users/[a-z]+|[removed]|gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0
+  … (81 more characters)
   ```
 
 </details>
