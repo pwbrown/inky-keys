@@ -1,7 +1,7 @@
 /**
  * Play together (REQUIREMENTS §13e): host or join a game with players on the
  * same network. There's no server, so players carry a handshake code each
- * way: as a link, pasted, or played as sound.
+ * way: as a link, pasted, played as sound, or shown as a QR code.
  */
 import './dialog.css';
 import './playTogether.css';
@@ -14,7 +14,9 @@ import { takeRelayedAnswers } from '../net/answerRelay';
 import { GuestGame, type GuestEnd, type RaceStart } from '../net/guest';
 import { HostGame } from '../net/host';
 import { PeerError, answerInvite, peersSupported } from '../net/peer';
+import { scanCodes, scanSupported } from '../net/scan';
 import { listenForCodes, playCode, soundSupported } from '../net/sound';
+import { encodeQr, qrSvg } from '../core/qr';
 import { badgeSvg, artElement } from './art';
 import { h, trapFocus } from './dom';
 
@@ -82,6 +84,9 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
   let stopRelay: (() => void) | null = null;
   let stopListening: (() => void) | null = null;
   let stopSound: (() => void) | null = null;
+  let stopScan: (() => void) | null = null;
+  /** Codes show as QR codes too, once asked for (kept as new invites are made). */
+  let showQr = false;
   let closed = false;
   /** Closing hands the game to a race instead of ending it. */
   let handingOff = false;
@@ -93,11 +98,18 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
     status.textContent = text;
   };
 
+  const stopScanning = () => {
+    stopScan?.();
+    stopScan = null;
+  };
+
+  /** Microphone, speaker and camera off. */
   const stopAudio = () => {
     stopListening?.();
     stopListening = null;
     stopSound?.();
     stopSound = null;
+    stopScanning();
   };
 
   // ---- Pieces ----------------------------------------------------------
@@ -138,6 +150,23 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
           },
         }, [t('together.playSound')])
       : null;
+    // The QR code holds the whole link, so a phone's camera app can open it straight away.
+    const qr = h('figure', { className: 'pt-qr', hidden: !showQr }, [
+      artElement(qrSvg(encodeQr(link), t('together.qrLabel')), 'pt-qr-code'),
+      h('figcaption', { className: 'pt-note' }, [t('together.qrHint')]),
+    ]);
+    const qrButton = h('button', {
+      type: 'button',
+      className: 'tc-secondary',
+      'data-id': 'show-qr',
+      'aria-expanded': String(showQr),
+      onClick: () => {
+        showQr = !showQr;
+        qr.hidden = !showQr;
+        qrButton.setAttribute('aria-expanded', String(showQr));
+        qrButton.textContent = t(showQr ? 'together.hideQr' : 'together.showQr');
+      },
+    }, [t(showQr ? 'together.hideQr' : 'together.showQr')]);
     return h('div', { className: 'pt-send' }, [
       codeText,
       h('div', { className: 'tc-actions pt-actions' }, [
@@ -147,8 +176,10 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
         h('button', { type: 'button', className: 'tc-secondary', 'data-id': 'copy-code', onClick: () => void copy(code, 'together.copiedCode') }, [
           t('together.copyCode'),
         ]),
+        qrButton,
         soundButton,
       ]),
+      qr,
     ]);
   };
 
@@ -190,6 +221,7 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
               say('');
               return;
             }
+            scanOff();
             try {
               const listening = await listenForCodes((bytes) => {
                 try {
@@ -214,6 +246,60 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
           },
         }, [t('together.listen')])
       : null;
+    const video = h('video', { className: 'pt-camera', 'aria-label': t('together.cameraLabel') });
+    const camera = h('div', { className: 'pt-scan', hidden: true }, [video]);
+    const scanOff = () => {
+      stopScanning();
+      camera.hidden = true;
+      scan?.setAttribute('aria-pressed', 'false');
+      if (scan) scan.textContent = t('together.scan');
+    };
+    let wrongSaid = false;
+    const scan = scanSupported()
+      ? h('button', {
+          type: 'button',
+          className: 'tc-secondary',
+          'data-id': 'scan',
+          'aria-pressed': 'false',
+          onClick: async () => {
+            if (stopScan) {
+              scanOff();
+              say('');
+              return;
+            }
+            stopAudio();
+            listen?.setAttribute('aria-pressed', 'false');
+            if (listen) listen.textContent = t('together.listen');
+            camera.hidden = false;
+            wrongSaid = false;
+            say(t('together.scanning'));
+            try {
+              const scanning = await scanCodes(video, (text) => {
+                try {
+                  const handshake = decodeHandshake(text);
+                  if (handshake.kind !== expecting) {
+                    if (!wrongSaid) say(t(expecting === 'answer' ? 'together.error.notReply' : 'together.error.notInvite'));
+                    wrongSaid = true;
+                    return;
+                  }
+                  input.value = encodeHandshake(handshake);
+                  scanOff();
+                  void submit();
+                } catch {
+                  // Some other QR code, or a misread: keep looking.
+                }
+              });
+              if (closed || camera.hidden || !camera.isConnected) return scanning.stop();
+              stopScan = scanning.stop;
+              scan!.setAttribute('aria-pressed', 'true');
+              scan!.textContent = t('together.stopScan');
+            } catch {
+              camera.hidden = true;
+              say(t('together.error.camera'));
+            }
+          },
+        }, [t('together.scan')])
+      : null;
     const form = h(
       'form',
       {
@@ -223,7 +309,7 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
           void submit();
         },
       },
-      [input, connect, listen],
+      [input, connect, scan, listen, camera],
     );
     return { form, input };
   };
@@ -439,6 +525,8 @@ export function openPlayTogether(host: HTMLElement, options: PlayTogetherOptions
   };
 
   function render(focus = true) {
+    // The camera's video is about to be replaced.
+    stopScanning();
     const focused = body.contains(document.activeElement) ? (document.activeElement as HTMLElement).dataset.id : undefined;
     const typed = body.querySelector<HTMLInputElement>('.pt-paste')?.value ?? '';
     body.replaceChildren(...screens[view.v]().filter((el): el is HTMLElement => el !== null));

@@ -61,3 +61,9 @@ Third-party content bundled with Inky Keys, with its source and license (REQUIRE
 - **Source:** ["Hands 1"](https://freesvg.org/hands-1) by Stipo on FreeSVG.org.
 - **License:** [Public Domain (CC0 1.0)](https://creativecommons.org/publicdomain/zero/1.0/). No attribution is required; this entry is a courtesy.
 - **Changes:** only the left hand is kept (the right hand is it mirrored), Inkscape metadata removed, and it's recolored to the game's palette. The fingertip and finger-base points used to place it and to shade single fingers were measured from the drawing.
+
+## QR code reader
+
+- **What:** [jsQR](https://github.com/cozmo/jsQR) 1.4.0 by Cosmo Wolfe, which reads QR codes from the camera for Play together's **Scan QR code**. It's bundled from the `jsqr` npm package and loaded only when a player presses Scan.
+- **License:** Apache License 2.0. The full text is in [`licenses/jsQR-Apache-2.0.txt`](licenses/jsQR-Apache-2.0.txt).
+- **Changes:** none. (The QR codes the game shows are drawn by its own encoder, `src/core/qr.ts`, which follows the structure of [Project Nayuki's QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) (MIT).)

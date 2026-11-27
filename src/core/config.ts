@@ -583,6 +583,8 @@ export const GAME_CONFIG = {
     pingIntervalMs: 2000,
     /** A player not heard from for this long has left. */
     silentTimeoutMs: 8000,
+    /** QR pairing (src/net/scan.ts): the camera is checked for a code this often. */
+    scanIntervalMs: 150,
     /** Sound pairing (src/core/net/modem.ts): each symbol is one byte as two tones, one per band. */
     sound: {
       symbolMs: 40,

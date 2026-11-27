@@ -24,6 +24,11 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '2.34.0',
+    date: '2026-11-27',
+    notes: ['release.2.34.0.qr'],
+  },
+  {
     version: '2.33.0',
     date: '2026-11-24',
     notes: ['release.2.33.0.race'],

@@ -130,3 +130,39 @@
   font-size: 18px;
   padding: 10px 22px;
 }
+
+.pt-qr {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin: 10px 0 4px;
+}
+
+.pt-qr[hidden],
+.pt-scan[hidden] {
+  display: none;
+}
+
+.pt-qr-code svg {
+  display: block;
+  width: 196px;
+  height: 196px;
+  border-radius: 6px;
+}
+
+.pt-scan {
+  flex: 1 1 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.pt-camera {
+  width: min(320px, 100%);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 2px solid var(--tc-ink);
+  border-radius: 10px;
+  background: var(--tc-ink);
+  /* A mirror image is easier to aim with. */
+  transform: scaleX(-1);
+}
